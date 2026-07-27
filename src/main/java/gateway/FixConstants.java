@@ -43,6 +43,11 @@ public final class FixConstants {
     // 32 is comfortable headroom and bounds the scanner's arrays.
     public static final int MAX_FIELDS = 32;
 
+    // Max BodyLength (tag 9) we'll accept before treating the length prefix as a
+    // lie. Order messages are ~150 bytes; this is generous. Bounds the frame-end
+    // computation and turns an absurd/garbage 9= into a defined reject.
+    public static final int MAX_FRAME = 4096;
+
     /**
      * Parses the ASCII digits in {@code buf[start, end)} into a non-negative long.
      * Returns -1L on any reject: empty range, non-digit byte, or overflow past

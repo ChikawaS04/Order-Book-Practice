@@ -4,8 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e1aea6c6-22a5-4fbf-ab3b-b1fb46959b08" name="Changes" comment="feat(gateway): implement FixParser.parse for 35=D and 35=F (Step 5)&#10;&#10;Assemble the full message-level parser on top of the Step 1-4 primitives.&#10;parse() runs checksum -&gt; scan -&gt; dispatch on 35= -&gt; per-type validation,&#10;populating a pre-allocated OrderEvent slot only on success.&#10;&#10;- Add OrderEvent carrier and OrderEventType enum in event package&#10;  (framework-free: no com.lmax/io.netty, so both parser and Disruptor&#10;  can depend on it)&#10;- Add MSG_TYPE_NEW_ORDER ('D') / MSG_TYPE_CANCEL ('F') to FixConstants&#10;- Dispatch to parseNewOrder (requires 11,54,44,38,55) and parseCancel&#10;  (requires 11,41) via thin switch on tag 35&#10;- Validate into locals first; target is untouched on reject so the&#10;  gateway only publishes valid messages&#10;- Clear message-type-specific fields per branch to avoid stale reads&#10;  on the reused slot&#10;- eventType set in parser; timestamp deferred to gateway (Step 7) to&#10;  keep parse deterministic and unit-testable&#10;- Add findTag, symbolMatches, mapSide helpers (zero-allocation)&#10;- Reject rules: non-numeric ClOrdID, invalid side (54=3), wrong symbol,&#10;  qty &lt;= 0 (38=0), bad price (0/negative/&gt;2dp), unknown 35= type">
-      <change beforePath="$PROJECT_DIR$/src/test/java/gateway/FixParserTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/gateway/FixParserTest.java" afterDir="false" />
+    <list default="true" id="e1aea6c6-22a5-4fbf-ab3b-b1fb46959b08" name="Changes" comment="test(gateway): add message-level tests for FixParser.parse (Step 5)&#10;&#10;Cover the SRS Step 5 cases via a message builder that computes a correct&#10;BodyLength and CheckSum, so rejects are attributable to field validation&#10;rather than a bad trailer.&#10;&#10;- valid 35=D (buy and sell) populates all fields; originalOrderId cleared&#10;- valid 35=F populates orderId/originalOrderId; side/price/quantity cleared&#10;- reject: missing tag 44, invalid side (54=3), wrong symbol, qty 0 (38=0),&#10;  non-numeric ClOrdID, unknown 35= type">
+      <change afterPath="$PROJECT_DIR$/src/main/java/gateway/FixFrameDecoder.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/gateway/FixConstants.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/gateway/FixConstants.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -13,7 +16,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="25" />
+    <option name="cachedIndexableFilesCount" value="27" />
     <option name="fileBasedEmbeddingIndicesEnabled" value="true" />
   </component>
   <component name="FileTemplateManagerImpl">
@@ -54,37 +57,37 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "Application.DefaultConfig.executor": "Run",
-    "JUnit.All in OrderBookDemo.executor": "Run",
-    "JUnit.FixParserChecksumTest.executor": "Run",
-    "JUnit.FixParserPriceTest.executor": "Run",
-    "JUnit.FixParserScanTest.executor": "Run",
-    "JUnit.FixParserTest.executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.MCP Project settings loaded": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "main",
-    "kotlin-language-version-configured": "true",
-    "last_directory_selection": "C:/Users/ddavi/IdeaProjects/LimitOrderBook/src/test/java",
-    "last_opened_file_path": "C:/Users/ddavi/IdeaProjects/Limit-Order-Management-System",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "Modules",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.2",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;Application.DefaultConfig.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.All in OrderBookDemo.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.FixParserChecksumTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.FixParserPriceTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.FixParserScanTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.FixParserTest.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_directory_selection&quot;: &quot;C:/Users/ddavi/IdeaProjects/LimitOrderBook/src/test/java&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/ddavi/IdeaProjects/Limit-Order-Management-System&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
       <recent name="" />
@@ -200,7 +203,8 @@
       <workItem from="1784764408615" duration="3603000" />
       <workItem from="1784772653192" duration="7088000" />
       <workItem from="1784825409073" duration="8423000" />
-      <workItem from="1784834279695" duration="4129000" />
+      <workItem from="1784834279695" duration="4768000" />
+      <workItem from="1785119762806" duration="4677000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit: Order Book Demo project">
       <option name="closed" value="true" />
@@ -370,7 +374,15 @@
       <option name="project" value="LOCAL" />
       <updated>1784838579922</updated>
     </task>
-    <option name="localTasksCounter" value="22" />
+    <task id="LOCAL-00022" summary="test(gateway): add message-level tests for FixParser.parse (Step 5)&#10;&#10;Cover the SRS Step 5 cases via a message builder that computes a correct&#10;BodyLength and CheckSum, so rejects are attributable to field validation&#10;rather than a bad trailer.&#10;&#10;- valid 35=D (buy and sell) populates all fields; originalOrderId cleared&#10;- valid 35=F populates orderId/originalOrderId; side/price/quantity cleared&#10;- reject: missing tag 44, invalid side (54=3), wrong symbol, qty 0 (38=0),&#10;  non-numeric ClOrdID, unknown 35= type">
+      <option name="closed" value="true" />
+      <created>1784838888359</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1784838888359</updated>
+    </task>
+    <option name="localTasksCounter" value="23" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -394,6 +406,7 @@
     <MESSAGE value="test(gateway): add FixParser tag scanner tests&#10;&#10;Cover the Step 3 scanner: session tags pass through in order,&#10;'='-in-value delimited by SOH, empty/non-numeric tag and missing '='&#10;rejects, empty value accepted (deferred to Step 5), MAX_FIELDS&#10;boundary both sides, and offset/length handling within a larger buffer." />
     <MESSAGE value="Add checksum validation for FIX messages (Step 4)&#10;&#10;Verify tag 10 before any message interpretation: sum every byte up to and&#10;including the SOH preceding &quot;10=&quot;, mod 256, and compare against the field's&#10;three-digit value. Operates on raw byte[] so structural trust is&#10;established before the tag scan, independent of the Step 3 scanner arrays.&#10;&#10;Locate the trailer by computing from the end (a complete message ends in&#10;the 7-byte 10=xxx&lt;SOH&gt;) rather than scanning for it, leaning on the frame&#10;decoder's trailer invariant instead of duplicating a scan. Read the three&#10;digits via parseLong, which gives free rejection of a malformed checksum&#10;field: its -1L sentinel can't equal a 0..255 sum, consistent with the&#10;parseLong/parsePrice reject convention.&#10;&#10;Guard length &lt; 8 (no room for a summed byte plus the trailer) before&#10;indexing. The per-byte &amp; 0xFF is kept for clarity but is not load-bearing:&#10;the final &amp; 0xFF already collapses the signed/unsigned difference, since a&#10;high byte differs by exactly 256, i.e. 0 mod 256.&#10;&#10;Static, pure byte[] in; no String, no io.netty, no com.lmax. Runs at the&#10;gateway boundary, off the hot path.&#10;&#10;Tested: known-good message (independently computed checksum), corrupted&#10;body byte, wrong checksum value, non-digit checksum field, too-short&#10;buffer, and the good message embedded in a wider buffer to verify&#10;offset/length bounds." />
     <MESSAGE value="feat(gateway): implement FixParser.parse for 35=D and 35=F (Step 5)&#10;&#10;Assemble the full message-level parser on top of the Step 1-4 primitives.&#10;parse() runs checksum -&gt; scan -&gt; dispatch on 35= -&gt; per-type validation,&#10;populating a pre-allocated OrderEvent slot only on success.&#10;&#10;- Add OrderEvent carrier and OrderEventType enum in event package&#10;  (framework-free: no com.lmax/io.netty, so both parser and Disruptor&#10;  can depend on it)&#10;- Add MSG_TYPE_NEW_ORDER ('D') / MSG_TYPE_CANCEL ('F') to FixConstants&#10;- Dispatch to parseNewOrder (requires 11,54,44,38,55) and parseCancel&#10;  (requires 11,41) via thin switch on tag 35&#10;- Validate into locals first; target is untouched on reject so the&#10;  gateway only publishes valid messages&#10;- Clear message-type-specific fields per branch to avoid stale reads&#10;  on the reused slot&#10;- eventType set in parser; timestamp deferred to gateway (Step 7) to&#10;  keep parse deterministic and unit-testable&#10;- Add findTag, symbolMatches, mapSide helpers (zero-allocation)&#10;- Reject rules: non-numeric ClOrdID, invalid side (54=3), wrong symbol,&#10;  qty &lt;= 0 (38=0), bad price (0/negative/&gt;2dp), unknown 35= type" />
-    <option name="LAST_COMMIT_MESSAGE" value="feat(gateway): implement FixParser.parse for 35=D and 35=F (Step 5)&#10;&#10;Assemble the full message-level parser on top of the Step 1-4 primitives.&#10;parse() runs checksum -&gt; scan -&gt; dispatch on 35= -&gt; per-type validation,&#10;populating a pre-allocated OrderEvent slot only on success.&#10;&#10;- Add OrderEvent carrier and OrderEventType enum in event package&#10;  (framework-free: no com.lmax/io.netty, so both parser and Disruptor&#10;  can depend on it)&#10;- Add MSG_TYPE_NEW_ORDER ('D') / MSG_TYPE_CANCEL ('F') to FixConstants&#10;- Dispatch to parseNewOrder (requires 11,54,44,38,55) and parseCancel&#10;  (requires 11,41) via thin switch on tag 35&#10;- Validate into locals first; target is untouched on reject so the&#10;  gateway only publishes valid messages&#10;- Clear message-type-specific fields per branch to avoid stale reads&#10;  on the reused slot&#10;- eventType set in parser; timestamp deferred to gateway (Step 7) to&#10;  keep parse deterministic and unit-testable&#10;- Add findTag, symbolMatches, mapSide helpers (zero-allocation)&#10;- Reject rules: non-numeric ClOrdID, invalid side (54=3), wrong symbol,&#10;  qty &lt;= 0 (38=0), bad price (0/negative/&gt;2dp), unknown 35= type" />
+    <MESSAGE value="test(gateway): add message-level tests for FixParser.parse (Step 5)&#10;&#10;Cover the SRS Step 5 cases via a message builder that computes a correct&#10;BodyLength and CheckSum, so rejects are attributable to field validation&#10;rather than a bad trailer.&#10;&#10;- valid 35=D (buy and sell) populates all fields; originalOrderId cleared&#10;- valid 35=F populates orderId/originalOrderId; side/price/quantity cleared&#10;- reject: missing tag 44, invalid side (54=3), wrong symbol, qty 0 (38=0),&#10;  non-numeric ClOrdID, unknown 35= type" />
+    <option name="LAST_COMMIT_MESSAGE" value="test(gateway): add message-level tests for FixParser.parse (Step 5)&#10;&#10;Cover the SRS Step 5 cases via a message builder that computes a correct&#10;BodyLength and CheckSum, so rejects are attributable to field validation&#10;rather than a bad trailer.&#10;&#10;- valid 35=D (buy and sell) populates all fields; originalOrderId cleared&#10;- valid 35=F populates orderId/originalOrderId; side/price/quantity cleared&#10;- reject: missing tag 44, invalid side (54=3), wrong symbol, qty 0 (38=0),&#10;  non-numeric ClOrdID, unknown 35= type" />
   </component>
 </project>

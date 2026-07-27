@@ -93,7 +93,7 @@
       <recent name="" />
     </key>
   </component>
-  <component name="RunManager" selected="JUnit.FixParserTest">
+  <component name="RunManager" selected="JUnit.FixFrameDecoderTest">
     <configuration name="DefaultConfig" type="Application" factoryName="Application">
       <option name="MAIN_CLASS_NAME" value="Main" />
       <module name="OrderBookDemo" />
@@ -101,10 +101,17 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="All in OrderBookDemo" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+    <configuration name="FixFrameDecoderTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="OrderBookDemo" />
-      <option name="PACKAGE_NAME" value="" />
-      <option name="TEST_OBJECT" value="package" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="gateway.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="gateway" />
+      <option name="MAIN_CLASS_NAME" value="gateway.FixFrameDecoderTest" />
+      <option name="TEST_OBJECT" value="class" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -171,11 +178,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="JUnit.FixFrameDecoderTest" />
         <item itemvalue="JUnit.FixParserTest" />
         <item itemvalue="JUnit.FixParserChecksumTest" />
         <item itemvalue="JUnit.FixParserScanTest" />
         <item itemvalue="JUnit.FixParserPriceTest" />
-        <item itemvalue="JUnit.All in OrderBookDemo" />
       </list>
     </recent_temporary>
   </component>

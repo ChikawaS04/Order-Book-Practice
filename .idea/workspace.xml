@@ -4,11 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e1aea6c6-22a5-4fbf-ab3b-b1fb46959b08" name="Changes" comment="test(gateway): add message-level tests for FixParser.parse (Step 5)&#10;&#10;Cover the SRS Step 5 cases via a message builder that computes a correct&#10;BodyLength and CheckSum, so rejects are attributable to field validation&#10;rather than a bad trailer.&#10;&#10;- valid 35=D (buy and sell) populates all fields; originalOrderId cleared&#10;- valid 35=F populates orderId/originalOrderId; side/price/quantity cleared&#10;- reject: missing tag 44, invalid side (54=3), wrong symbol, qty 0 (38=0),&#10;  non-numeric ClOrdID, unknown 35= type">
-      <change afterPath="$PROJECT_DIR$/src/main/java/gateway/FixFrameDecoder.java" afterDir="false" />
+    <list default="true" id="e1aea6c6-22a5-4fbf-ab3b-b1fb46959b08" name="Changes" comment="test(gateway): cover FixFrameDecoder framing (Step 6)&#10;&#10;Drive the Netty-free core on byte[]: frameLength outcomes (complete,&#10;NEED_MORE, MALFORMED across bad/empty/oversized 9= and broken trailer)&#10;and frameAndEmit over the five build-guide stream cases plus&#10;malformed-prefix resync and pure-garbage discard. Two EmbeddedChannel&#10;checks confirm the ByteToMessageDecoder wrapper accumulates correctly,&#10;including a message split across writes.">
+      <change afterPath="$PROJECT_DIR$/src/main/java/event/InboundPipeline.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/event/OrderEventFactory.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/event/CapturingOrderHandler.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/event/InboundPipelineTest.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/gateway/FixConstants.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/gateway/FixConstants.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -16,7 +18,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="27" />
+    <option name="cachedIndexableFilesCount" value="29" />
     <option name="fileBasedEmbeddingIndicesEnabled" value="true" />
   </component>
   <component name="FileTemplateManagerImpl">
@@ -57,43 +59,45 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;Application.DefaultConfig.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.All in OrderBookDemo.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.FixParserChecksumTest.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.FixParserPriceTest.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.FixParserScanTest.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.FixParserTest.executor&quot;: &quot;Run&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_directory_selection&quot;: &quot;C:/Users/ddavi/IdeaProjects/LimitOrderBook/src/test/java&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/ddavi/IdeaProjects/Limit-Order-Management-System&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "Application.DefaultConfig.executor": "Run",
+    "JUnit.All in OrderBookDemo.executor": "Run",
+    "JUnit.FixFrameDecoderTest.executor": "Run",
+    "JUnit.FixParserChecksumTest.executor": "Run",
+    "JUnit.FixParserPriceTest.executor": "Run",
+    "JUnit.FixParserScanTest.executor": "Run",
+    "JUnit.FixParserTest.executor": "Run",
+    "JUnit.InboundPipelineTest.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "git-widget-placeholder": "main",
+    "kotlin-language-version-configured": "true",
+    "last_directory_selection": "C:/Users/ddavi/IdeaProjects/LimitOrderBook/src/test/java",
+    "last_opened_file_path": "C:/Users/ddavi/IdeaProjects/Limit-Order-Management-System",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "Modules",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.2",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
       <recent name="" />
     </key>
   </component>
-  <component name="RunManager" selected="JUnit.FixFrameDecoderTest">
+  <component name="RunManager" selected="JUnit.InboundPipelineTest">
     <configuration name="DefaultConfig" type="Application" factoryName="Application">
       <option name="MAIN_CLASS_NAME" value="Main" />
       <module name="OrderBookDemo" />
@@ -131,21 +135,6 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="FixParserPriceTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
-      <module name="OrderBookDemo" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="gateway.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <option name="PACKAGE_NAME" value="gateway" />
-      <option name="MAIN_CLASS_NAME" value="gateway.FixParserPriceTest" />
-      <option name="TEST_OBJECT" value="class" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="FixParserScanTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="OrderBookDemo" />
       <extension name="coverage">
@@ -176,13 +165,28 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="InboundPipelineTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="OrderBookDemo" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="event.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="event" />
+      <option name="MAIN_CLASS_NAME" value="event.InboundPipelineTest" />
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="JUnit.InboundPipelineTest" />
         <item itemvalue="JUnit.FixFrameDecoderTest" />
         <item itemvalue="JUnit.FixParserTest" />
         <item itemvalue="JUnit.FixParserChecksumTest" />
         <item itemvalue="JUnit.FixParserScanTest" />
-        <item itemvalue="JUnit.FixParserPriceTest" />
       </list>
     </recent_temporary>
   </component>
@@ -211,7 +215,8 @@
       <workItem from="1784772653192" duration="7088000" />
       <workItem from="1784825409073" duration="8423000" />
       <workItem from="1784834279695" duration="4768000" />
-      <workItem from="1785119762806" duration="4677000" />
+      <workItem from="1785119762806" duration="5182000" />
+      <workItem from="1785875598878" duration="1393000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit: Order Book Demo project">
       <option name="closed" value="true" />
@@ -389,7 +394,23 @@
       <option name="project" value="LOCAL" />
       <updated>1784838888359</updated>
     </task>
-    <option name="localTasksCounter" value="23" />
+    <task id="LOCAL-00023" summary="feat(gateway): add length-prefixed FixFrameDecoder&#10;&#10;Step 6. First Netty-aware class in the parse path. Extends&#10;ByteToMessageDecoder, reads 9=&lt;n&gt;, emits one complete message&#10;(8=..&lt;SOH&gt; 9=&lt;n&gt;&lt;SOH&gt; body 10=xxx&lt;SOH&gt;) at a time as a byte[] copy.&#10;&#10;- frameLength/frameAndEmit are static, byte[]-only, Netty-free, so the&#10;  framing math is unit-testable without EmbeddedChannel&#10;- handoff (a): frame copied to a fresh byte[] before the inbound ring&#10;  buffer, keeping FixParser pure byte[] with no refcount discipline&#10;- MALFORMED (bad/oversized/non-numeric 9=, broken trailer) resyncs to the&#10;  next 8=; NEED_MORE waits for more bytes&#10;- add MAX_FRAME guard and netty-codec dependency (compile scope)&#10;&#10;Boundary rule now: FixFrameDecoder may import io.netty; FixParser may not.">
+      <option name="closed" value="true" />
+      <created>1785125239090</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1785125239091</updated>
+    </task>
+    <task id="LOCAL-00024" summary="test(gateway): cover FixFrameDecoder framing (Step 6)&#10;&#10;Drive the Netty-free core on byte[]: frameLength outcomes (complete,&#10;NEED_MORE, MALFORMED across bad/empty/oversized 9= and broken trailer)&#10;and frameAndEmit over the five build-guide stream cases plus&#10;malformed-prefix resync and pure-garbage discard. Two EmbeddedChannel&#10;checks confirm the ByteToMessageDecoder wrapper accumulates correctly,&#10;including a message split across writes.">
+      <option name="closed" value="true" />
+      <created>1785125368998</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1785125368998</updated>
+    </task>
+    <option name="localTasksCounter" value="25" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -414,6 +435,8 @@
     <MESSAGE value="Add checksum validation for FIX messages (Step 4)&#10;&#10;Verify tag 10 before any message interpretation: sum every byte up to and&#10;including the SOH preceding &quot;10=&quot;, mod 256, and compare against the field's&#10;three-digit value. Operates on raw byte[] so structural trust is&#10;established before the tag scan, independent of the Step 3 scanner arrays.&#10;&#10;Locate the trailer by computing from the end (a complete message ends in&#10;the 7-byte 10=xxx&lt;SOH&gt;) rather than scanning for it, leaning on the frame&#10;decoder's trailer invariant instead of duplicating a scan. Read the three&#10;digits via parseLong, which gives free rejection of a malformed checksum&#10;field: its -1L sentinel can't equal a 0..255 sum, consistent with the&#10;parseLong/parsePrice reject convention.&#10;&#10;Guard length &lt; 8 (no room for a summed byte plus the trailer) before&#10;indexing. The per-byte &amp; 0xFF is kept for clarity but is not load-bearing:&#10;the final &amp; 0xFF already collapses the signed/unsigned difference, since a&#10;high byte differs by exactly 256, i.e. 0 mod 256.&#10;&#10;Static, pure byte[] in; no String, no io.netty, no com.lmax. Runs at the&#10;gateway boundary, off the hot path.&#10;&#10;Tested: known-good message (independently computed checksum), corrupted&#10;body byte, wrong checksum value, non-digit checksum field, too-short&#10;buffer, and the good message embedded in a wider buffer to verify&#10;offset/length bounds." />
     <MESSAGE value="feat(gateway): implement FixParser.parse for 35=D and 35=F (Step 5)&#10;&#10;Assemble the full message-level parser on top of the Step 1-4 primitives.&#10;parse() runs checksum -&gt; scan -&gt; dispatch on 35= -&gt; per-type validation,&#10;populating a pre-allocated OrderEvent slot only on success.&#10;&#10;- Add OrderEvent carrier and OrderEventType enum in event package&#10;  (framework-free: no com.lmax/io.netty, so both parser and Disruptor&#10;  can depend on it)&#10;- Add MSG_TYPE_NEW_ORDER ('D') / MSG_TYPE_CANCEL ('F') to FixConstants&#10;- Dispatch to parseNewOrder (requires 11,54,44,38,55) and parseCancel&#10;  (requires 11,41) via thin switch on tag 35&#10;- Validate into locals first; target is untouched on reject so the&#10;  gateway only publishes valid messages&#10;- Clear message-type-specific fields per branch to avoid stale reads&#10;  on the reused slot&#10;- eventType set in parser; timestamp deferred to gateway (Step 7) to&#10;  keep parse deterministic and unit-testable&#10;- Add findTag, symbolMatches, mapSide helpers (zero-allocation)&#10;- Reject rules: non-numeric ClOrdID, invalid side (54=3), wrong symbol,&#10;  qty &lt;= 0 (38=0), bad price (0/negative/&gt;2dp), unknown 35= type" />
     <MESSAGE value="test(gateway): add message-level tests for FixParser.parse (Step 5)&#10;&#10;Cover the SRS Step 5 cases via a message builder that computes a correct&#10;BodyLength and CheckSum, so rejects are attributable to field validation&#10;rather than a bad trailer.&#10;&#10;- valid 35=D (buy and sell) populates all fields; originalOrderId cleared&#10;- valid 35=F populates orderId/originalOrderId; side/price/quantity cleared&#10;- reject: missing tag 44, invalid side (54=3), wrong symbol, qty 0 (38=0),&#10;  non-numeric ClOrdID, unknown 35= type" />
-    <option name="LAST_COMMIT_MESSAGE" value="test(gateway): add message-level tests for FixParser.parse (Step 5)&#10;&#10;Cover the SRS Step 5 cases via a message builder that computes a correct&#10;BodyLength and CheckSum, so rejects are attributable to field validation&#10;rather than a bad trailer.&#10;&#10;- valid 35=D (buy and sell) populates all fields; originalOrderId cleared&#10;- valid 35=F populates orderId/originalOrderId; side/price/quantity cleared&#10;- reject: missing tag 44, invalid side (54=3), wrong symbol, qty 0 (38=0),&#10;  non-numeric ClOrdID, unknown 35= type" />
+    <MESSAGE value="feat(gateway): add length-prefixed FixFrameDecoder&#10;&#10;Step 6. First Netty-aware class in the parse path. Extends&#10;ByteToMessageDecoder, reads 9=&lt;n&gt;, emits one complete message&#10;(8=..&lt;SOH&gt; 9=&lt;n&gt;&lt;SOH&gt; body 10=xxx&lt;SOH&gt;) at a time as a byte[] copy.&#10;&#10;- frameLength/frameAndEmit are static, byte[]-only, Netty-free, so the&#10;  framing math is unit-testable without EmbeddedChannel&#10;- handoff (a): frame copied to a fresh byte[] before the inbound ring&#10;  buffer, keeping FixParser pure byte[] with no refcount discipline&#10;- MALFORMED (bad/oversized/non-numeric 9=, broken trailer) resyncs to the&#10;  next 8=; NEED_MORE waits for more bytes&#10;- add MAX_FRAME guard and netty-codec dependency (compile scope)&#10;&#10;Boundary rule now: FixFrameDecoder may import io.netty; FixParser may not." />
+    <MESSAGE value="test(gateway): cover FixFrameDecoder framing (Step 6)&#10;&#10;Drive the Netty-free core on byte[]: frameLength outcomes (complete,&#10;NEED_MORE, MALFORMED across bad/empty/oversized 9= and broken trailer)&#10;and frameAndEmit over the five build-guide stream cases plus&#10;malformed-prefix resync and pure-garbage discard. Two EmbeddedChannel&#10;checks confirm the ByteToMessageDecoder wrapper accumulates correctly,&#10;including a message split across writes." />
+    <option name="LAST_COMMIT_MESSAGE" value="test(gateway): cover FixFrameDecoder framing (Step 6)&#10;&#10;Drive the Netty-free core on byte[]: frameLength outcomes (complete,&#10;NEED_MORE, MALFORMED across bad/empty/oversized 9= and broken trailer)&#10;and frameAndEmit over the five build-guide stream cases plus&#10;malformed-prefix resync and pure-garbage discard. Two EmbeddedChannel&#10;checks confirm the ByteToMessageDecoder wrapper accumulates correctly,&#10;including a message split across writes." />
   </component>
 </project>

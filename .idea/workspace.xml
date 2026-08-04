@@ -4,13 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e1aea6c6-22a5-4fbf-ab3b-b1fb46959b08" name="Changes" comment="test(gateway): cover FixFrameDecoder framing (Step 6)&#10;&#10;Drive the Netty-free core on byte[]: frameLength outcomes (complete,&#10;NEED_MORE, MALFORMED across bad/empty/oversized 9= and broken trailer)&#10;and frameAndEmit over the five build-guide stream cases plus&#10;malformed-prefix resync and pure-garbage discard. Two EmbeddedChannel&#10;checks confirm the ByteToMessageDecoder wrapper accumulates correctly,&#10;including a message split across writes.">
-      <change afterPath="$PROJECT_DIR$/src/main/java/event/InboundPipeline.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/event/OrderEventFactory.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/event/CapturingOrderHandler.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/event/InboundPipelineTest.java" afterDir="false" />
+    <list default="true" id="e1aea6c6-22a5-4fbf-ab3b-b1fb46959b08" name="Changes" comment="Step 6.5: inbound Disruptor wiring (SRS §3.2)&#10;&#10;Add the inbound ring buffer so Step 7 has a buffer to produce into.&#10;&#10;- pom: add com.lmax:disruptor:4.0.0 (compile scope)&#10;- OrderEventFactory: pre-allocates empty OrderEvent slots; isolates the&#10;  sole com.lmax import in the event package (OrderEvent stays framework-free)&#10;- InboundPipeline: single-producer Disruptor&lt;OrderEvent&gt;, one consumer,&#10;  BlockingWaitStrategy (demo default), 1024-slot ring; exposes the RingBuffer&#10;- CapturingOrderHandler (test): reusable snapshot-recording consumer for&#10;  6.5 and Step 7; copies fields out to survive slot reuse&#10;- InboundPipelineTest: distinct/empty slots, publish round-trip, and&#10;  slot-reuse (size-1 ring) with no stale-field bleed">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -97,7 +92,7 @@
       <recent name="" />
     </key>
   </component>
-  <component name="RunManager" selected="JUnit.InboundPipelineTest">
+  <component name="RunManager" selected="JUnit.OrderGatewayTest">
     <configuration name="DefaultConfig" type="Application" factoryName="Application">
       <option name="MAIN_CLASS_NAME" value="Main" />
       <module name="OrderBookDemo" />
@@ -135,21 +130,6 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="FixParserScanTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
-      <module name="OrderBookDemo" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="gateway.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <option name="PACKAGE_NAME" value="gateway" />
-      <option name="MAIN_CLASS_NAME" value="gateway.FixParserScanTest" />
-      <option name="TEST_OBJECT" value="class" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="FixParserTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="OrderBookDemo" />
       <extension name="coverage">
@@ -180,13 +160,28 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="OrderGatewayTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="OrderBookDemo" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="gateway.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="gateway" />
+      <option name="MAIN_CLASS_NAME" value="gateway.OrderGatewayTest" />
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="JUnit.OrderGatewayTest" />
         <item itemvalue="JUnit.InboundPipelineTest" />
         <item itemvalue="JUnit.FixFrameDecoderTest" />
         <item itemvalue="JUnit.FixParserTest" />
         <item itemvalue="JUnit.FixParserChecksumTest" />
-        <item itemvalue="JUnit.FixParserScanTest" />
       </list>
     </recent_temporary>
   </component>
@@ -216,7 +211,7 @@
       <workItem from="1784825409073" duration="8423000" />
       <workItem from="1784834279695" duration="4768000" />
       <workItem from="1785119762806" duration="5182000" />
-      <workItem from="1785875598878" duration="1393000" />
+      <workItem from="1785875598878" duration="2566000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit: Order Book Demo project">
       <option name="closed" value="true" />
@@ -410,7 +405,15 @@
       <option name="project" value="LOCAL" />
       <updated>1785125368998</updated>
     </task>
-    <option name="localTasksCounter" value="25" />
+    <task id="LOCAL-00025" summary="Step 6.5: inbound Disruptor wiring (SRS §3.2)&#10;&#10;Add the inbound ring buffer so Step 7 has a buffer to produce into.&#10;&#10;- pom: add com.lmax:disruptor:4.0.0 (compile scope)&#10;- OrderEventFactory: pre-allocates empty OrderEvent slots; isolates the&#10;  sole com.lmax import in the event package (OrderEvent stays framework-free)&#10;- InboundPipeline: single-producer Disruptor&lt;OrderEvent&gt;, one consumer,&#10;  BlockingWaitStrategy (demo default), 1024-slot ring; exposes the RingBuffer&#10;- CapturingOrderHandler (test): reusable snapshot-recording consumer for&#10;  6.5 and Step 7; copies fields out to survive slot reuse&#10;- InboundPipelineTest: distinct/empty slots, publish round-trip, and&#10;  slot-reuse (size-1 ring) with no stale-field bleed">
+      <option name="closed" value="true" />
+      <created>1785879460814</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1785879460815</updated>
+    </task>
+    <option name="localTasksCounter" value="26" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -437,6 +440,7 @@
     <MESSAGE value="test(gateway): add message-level tests for FixParser.parse (Step 5)&#10;&#10;Cover the SRS Step 5 cases via a message builder that computes a correct&#10;BodyLength and CheckSum, so rejects are attributable to field validation&#10;rather than a bad trailer.&#10;&#10;- valid 35=D (buy and sell) populates all fields; originalOrderId cleared&#10;- valid 35=F populates orderId/originalOrderId; side/price/quantity cleared&#10;- reject: missing tag 44, invalid side (54=3), wrong symbol, qty 0 (38=0),&#10;  non-numeric ClOrdID, unknown 35= type" />
     <MESSAGE value="feat(gateway): add length-prefixed FixFrameDecoder&#10;&#10;Step 6. First Netty-aware class in the parse path. Extends&#10;ByteToMessageDecoder, reads 9=&lt;n&gt;, emits one complete message&#10;(8=..&lt;SOH&gt; 9=&lt;n&gt;&lt;SOH&gt; body 10=xxx&lt;SOH&gt;) at a time as a byte[] copy.&#10;&#10;- frameLength/frameAndEmit are static, byte[]-only, Netty-free, so the&#10;  framing math is unit-testable without EmbeddedChannel&#10;- handoff (a): frame copied to a fresh byte[] before the inbound ring&#10;  buffer, keeping FixParser pure byte[] with no refcount discipline&#10;- MALFORMED (bad/oversized/non-numeric 9=, broken trailer) resyncs to the&#10;  next 8=; NEED_MORE waits for more bytes&#10;- add MAX_FRAME guard and netty-codec dependency (compile scope)&#10;&#10;Boundary rule now: FixFrameDecoder may import io.netty; FixParser may not." />
     <MESSAGE value="test(gateway): cover FixFrameDecoder framing (Step 6)&#10;&#10;Drive the Netty-free core on byte[]: frameLength outcomes (complete,&#10;NEED_MORE, MALFORMED across bad/empty/oversized 9= and broken trailer)&#10;and frameAndEmit over the five build-guide stream cases plus&#10;malformed-prefix resync and pure-garbage discard. Two EmbeddedChannel&#10;checks confirm the ByteToMessageDecoder wrapper accumulates correctly,&#10;including a message split across writes." />
-    <option name="LAST_COMMIT_MESSAGE" value="test(gateway): cover FixFrameDecoder framing (Step 6)&#10;&#10;Drive the Netty-free core on byte[]: frameLength outcomes (complete,&#10;NEED_MORE, MALFORMED across bad/empty/oversized 9= and broken trailer)&#10;and frameAndEmit over the five build-guide stream cases plus&#10;malformed-prefix resync and pure-garbage discard. Two EmbeddedChannel&#10;checks confirm the ByteToMessageDecoder wrapper accumulates correctly,&#10;including a message split across writes." />
+    <MESSAGE value="Step 6.5: inbound Disruptor wiring (SRS §3.2)&#10;&#10;Add the inbound ring buffer so Step 7 has a buffer to produce into.&#10;&#10;- pom: add com.lmax:disruptor:4.0.0 (compile scope)&#10;- OrderEventFactory: pre-allocates empty OrderEvent slots; isolates the&#10;  sole com.lmax import in the event package (OrderEvent stays framework-free)&#10;- InboundPipeline: single-producer Disruptor&lt;OrderEvent&gt;, one consumer,&#10;  BlockingWaitStrategy (demo default), 1024-slot ring; exposes the RingBuffer&#10;- CapturingOrderHandler (test): reusable snapshot-recording consumer for&#10;  6.5 and Step 7; copies fields out to survive slot reuse&#10;- InboundPipelineTest: distinct/empty slots, publish round-trip, and&#10;  slot-reuse (size-1 ring) with no stale-field bleed" />
+    <option name="LAST_COMMIT_MESSAGE" value="Step 6.5: inbound Disruptor wiring (SRS §3.2)&#10;&#10;Add the inbound ring buffer so Step 7 has a buffer to produce into.&#10;&#10;- pom: add com.lmax:disruptor:4.0.0 (compile scope)&#10;- OrderEventFactory: pre-allocates empty OrderEvent slots; isolates the&#10;  sole com.lmax import in the event package (OrderEvent stays framework-free)&#10;- InboundPipeline: single-producer Disruptor&lt;OrderEvent&gt;, one consumer,&#10;  BlockingWaitStrategy (demo default), 1024-slot ring; exposes the RingBuffer&#10;- CapturingOrderHandler (test): reusable snapshot-recording consumer for&#10;  6.5 and Step 7; copies fields out to survive slot reuse&#10;- InboundPipelineTest: distinct/empty slots, publish round-trip, and&#10;  slot-reuse (size-1 ring) with no stale-field bleed" />
   </component>
 </project>

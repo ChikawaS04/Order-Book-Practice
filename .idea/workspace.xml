@@ -4,8 +4,14 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e1aea6c6-22a5-4fbf-ab3b-b1fb46959b08" name="Changes" comment="Step 6.5: inbound Disruptor wiring (SRS §3.2)&#10;&#10;Add the inbound ring buffer so Step 7 has a buffer to produce into.&#10;&#10;- pom: add com.lmax:disruptor:4.0.0 (compile scope)&#10;- OrderEventFactory: pre-allocates empty OrderEvent slots; isolates the&#10;  sole com.lmax import in the event package (OrderEvent stays framework-free)&#10;- InboundPipeline: single-producer Disruptor&lt;OrderEvent&gt;, one consumer,&#10;  BlockingWaitStrategy (demo default), 1024-slot ring; exposes the RingBuffer&#10;- CapturingOrderHandler (test): reusable snapshot-recording consumer for&#10;  6.5 and Step 7; copies fields out to survive slot reuse&#10;- InboundPipelineTest: distinct/empty slots, publish round-trip, and&#10;  slot-reuse (size-1 ring) with no stale-field bleed">
+    <list default="true" id="e1aea6c6-22a5-4fbf-ab3b-b1fb46959b08" name="Changes" comment="feat(gateway): implement OrderGateway inbound producer (Step 7)&#10;&#10;Wire FixFrameDecoder output -&gt; FixParser -&gt; inbound RingBuffer&lt;OrderEvent&gt;.&#10;onFrame(byte[]) parses one complete FIX message into a reusable scratch,&#10;stamps a receipt timestamp, and publishes to the ring on success; rejects&#10;are logged at the boundary (SRS §5.4) and dropped.&#10;&#10;- Parse into reusable scratch, copy-publish on success via a stored&#10;  non-capturing EventTranslatorOneArg: the Disruptor can't abandon a&#10;  claimed sequence, so rejects never touch the ring and the engine stays&#10;  unaware of them (boundary separation, SRS §5.5)&#10;- Timestamp stamped here (deferred from the parser, Step 5) via System.nanoTime;&#10;  monotonic high-res source for the §6.3 latency benchmark. Package-private&#10;  clock ctor injects a fixed clock for deterministic tests&#10;- Sole inbound producer (single-writer, SRS §5.2): ProducerType.SINGLE,&#10;  onFrame not thread-safe by design&#10;- Imports com.lmax (ring producer) but not io.netty; decoder-&gt;gateway&#10;  adapter deferred to Phase 4&#10;- Tests reuse the Step 6.5 CapturingOrderHandler over the real InboundPipeline:&#10;  valid D/F reach the ring, corrupt-checksum and null frames are dropped,&#10;  slot reuse shows no field bleed">
+      <change afterPath="$PROJECT_DIR$/src/main/java/engine/ExecutionListener.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/event/ExecutionEvent.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/event/ExecutionEventFactory.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/event/ExecutionEventType.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/main/java/event/OutboundPipeline.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/engine/MatchingEngine.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/engine/MatchingEngine.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -13,7 +19,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="29" />
+    <option name="cachedIndexableFilesCount" value="35" />
     <option name="fileBasedEmbeddingIndicesEnabled" value="true" />
   </component>
   <component name="FileTemplateManagerImpl">
@@ -54,39 +60,40 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "Application.DefaultConfig.executor": "Run",
-    "JUnit.All in OrderBookDemo.executor": "Run",
-    "JUnit.FixFrameDecoderTest.executor": "Run",
-    "JUnit.FixParserChecksumTest.executor": "Run",
-    "JUnit.FixParserPriceTest.executor": "Run",
-    "JUnit.FixParserScanTest.executor": "Run",
-    "JUnit.FixParserTest.executor": "Run",
-    "JUnit.InboundPipelineTest.executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.MCP Project settings loaded": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "main",
-    "kotlin-language-version-configured": "true",
-    "last_directory_selection": "C:/Users/ddavi/IdeaProjects/LimitOrderBook/src/test/java",
-    "last_opened_file_path": "C:/Users/ddavi/IdeaProjects/Limit-Order-Management-System",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "Modules",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.2",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;Application.DefaultConfig.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.All in OrderBookDemo.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.FixFrameDecoderTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.FixParserChecksumTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.FixParserPriceTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.FixParserScanTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.FixParserTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.InboundPipelineTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.OrderGatewayTest.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_directory_selection&quot;: &quot;C:/Users/ddavi/IdeaProjects/LimitOrderBook/src/test/java&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/ddavi/IdeaProjects/Limit-Order-Management-System&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
       <recent name="" />
@@ -211,7 +218,9 @@
       <workItem from="1784825409073" duration="8423000" />
       <workItem from="1784834279695" duration="4768000" />
       <workItem from="1785119762806" duration="5182000" />
-      <workItem from="1785875598878" duration="2566000" />
+      <workItem from="1785875598878" duration="3583000" />
+      <workItem from="1786071974533" duration="165000" />
+      <workItem from="1786072171749" duration="3256000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit: Order Book Demo project">
       <option name="closed" value="true" />
@@ -413,7 +422,15 @@
       <option name="project" value="LOCAL" />
       <updated>1785879460815</updated>
     </task>
-    <option name="localTasksCounter" value="26" />
+    <task id="LOCAL-00026" summary="feat(gateway): implement OrderGateway inbound producer (Step 7)&#10;&#10;Wire FixFrameDecoder output -&gt; FixParser -&gt; inbound RingBuffer&lt;OrderEvent&gt;.&#10;onFrame(byte[]) parses one complete FIX message into a reusable scratch,&#10;stamps a receipt timestamp, and publishes to the ring on success; rejects&#10;are logged at the boundary (SRS §5.4) and dropped.&#10;&#10;- Parse into reusable scratch, copy-publish on success via a stored&#10;  non-capturing EventTranslatorOneArg: the Disruptor can't abandon a&#10;  claimed sequence, so rejects never touch the ring and the engine stays&#10;  unaware of them (boundary separation, SRS §5.5)&#10;- Timestamp stamped here (deferred from the parser, Step 5) via System.nanoTime;&#10;  monotonic high-res source for the §6.3 latency benchmark. Package-private&#10;  clock ctor injects a fixed clock for deterministic tests&#10;- Sole inbound producer (single-writer, SRS §5.2): ProducerType.SINGLE,&#10;  onFrame not thread-safe by design&#10;- Imports com.lmax (ring producer) but not io.netty; decoder-&gt;gateway&#10;  adapter deferred to Phase 4&#10;- Tests reuse the Step 6.5 CapturingOrderHandler over the real InboundPipeline:&#10;  valid D/F reach the ring, corrupt-checksum and null frames are dropped,&#10;  slot reuse shows no field bleed">
+      <option name="closed" value="true" />
+      <created>1785881223048</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1785881223048</updated>
+    </task>
+    <option name="localTasksCounter" value="27" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -441,6 +458,7 @@
     <MESSAGE value="feat(gateway): add length-prefixed FixFrameDecoder&#10;&#10;Step 6. First Netty-aware class in the parse path. Extends&#10;ByteToMessageDecoder, reads 9=&lt;n&gt;, emits one complete message&#10;(8=..&lt;SOH&gt; 9=&lt;n&gt;&lt;SOH&gt; body 10=xxx&lt;SOH&gt;) at a time as a byte[] copy.&#10;&#10;- frameLength/frameAndEmit are static, byte[]-only, Netty-free, so the&#10;  framing math is unit-testable without EmbeddedChannel&#10;- handoff (a): frame copied to a fresh byte[] before the inbound ring&#10;  buffer, keeping FixParser pure byte[] with no refcount discipline&#10;- MALFORMED (bad/oversized/non-numeric 9=, broken trailer) resyncs to the&#10;  next 8=; NEED_MORE waits for more bytes&#10;- add MAX_FRAME guard and netty-codec dependency (compile scope)&#10;&#10;Boundary rule now: FixFrameDecoder may import io.netty; FixParser may not." />
     <MESSAGE value="test(gateway): cover FixFrameDecoder framing (Step 6)&#10;&#10;Drive the Netty-free core on byte[]: frameLength outcomes (complete,&#10;NEED_MORE, MALFORMED across bad/empty/oversized 9= and broken trailer)&#10;and frameAndEmit over the five build-guide stream cases plus&#10;malformed-prefix resync and pure-garbage discard. Two EmbeddedChannel&#10;checks confirm the ByteToMessageDecoder wrapper accumulates correctly,&#10;including a message split across writes." />
     <MESSAGE value="Step 6.5: inbound Disruptor wiring (SRS §3.2)&#10;&#10;Add the inbound ring buffer so Step 7 has a buffer to produce into.&#10;&#10;- pom: add com.lmax:disruptor:4.0.0 (compile scope)&#10;- OrderEventFactory: pre-allocates empty OrderEvent slots; isolates the&#10;  sole com.lmax import in the event package (OrderEvent stays framework-free)&#10;- InboundPipeline: single-producer Disruptor&lt;OrderEvent&gt;, one consumer,&#10;  BlockingWaitStrategy (demo default), 1024-slot ring; exposes the RingBuffer&#10;- CapturingOrderHandler (test): reusable snapshot-recording consumer for&#10;  6.5 and Step 7; copies fields out to survive slot reuse&#10;- InboundPipelineTest: distinct/empty slots, publish round-trip, and&#10;  slot-reuse (size-1 ring) with no stale-field bleed" />
-    <option name="LAST_COMMIT_MESSAGE" value="Step 6.5: inbound Disruptor wiring (SRS §3.2)&#10;&#10;Add the inbound ring buffer so Step 7 has a buffer to produce into.&#10;&#10;- pom: add com.lmax:disruptor:4.0.0 (compile scope)&#10;- OrderEventFactory: pre-allocates empty OrderEvent slots; isolates the&#10;  sole com.lmax import in the event package (OrderEvent stays framework-free)&#10;- InboundPipeline: single-producer Disruptor&lt;OrderEvent&gt;, one consumer,&#10;  BlockingWaitStrategy (demo default), 1024-slot ring; exposes the RingBuffer&#10;- CapturingOrderHandler (test): reusable snapshot-recording consumer for&#10;  6.5 and Step 7; copies fields out to survive slot reuse&#10;- InboundPipelineTest: distinct/empty slots, publish round-trip, and&#10;  slot-reuse (size-1 ring) with no stale-field bleed" />
+    <MESSAGE value="feat(gateway): implement OrderGateway inbound producer (Step 7)&#10;&#10;Wire FixFrameDecoder output -&gt; FixParser -&gt; inbound RingBuffer&lt;OrderEvent&gt;.&#10;onFrame(byte[]) parses one complete FIX message into a reusable scratch,&#10;stamps a receipt timestamp, and publishes to the ring on success; rejects&#10;are logged at the boundary (SRS §5.4) and dropped.&#10;&#10;- Parse into reusable scratch, copy-publish on success via a stored&#10;  non-capturing EventTranslatorOneArg: the Disruptor can't abandon a&#10;  claimed sequence, so rejects never touch the ring and the engine stays&#10;  unaware of them (boundary separation, SRS §5.5)&#10;- Timestamp stamped here (deferred from the parser, Step 5) via System.nanoTime;&#10;  monotonic high-res source for the §6.3 latency benchmark. Package-private&#10;  clock ctor injects a fixed clock for deterministic tests&#10;- Sole inbound producer (single-writer, SRS §5.2): ProducerType.SINGLE,&#10;  onFrame not thread-safe by design&#10;- Imports com.lmax (ring producer) but not io.netty; decoder-&gt;gateway&#10;  adapter deferred to Phase 4&#10;- Tests reuse the Step 6.5 CapturingOrderHandler over the real InboundPipeline:&#10;  valid D/F reach the ring, corrupt-checksum and null frames are dropped,&#10;  slot reuse shows no field bleed" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat(gateway): implement OrderGateway inbound producer (Step 7)&#10;&#10;Wire FixFrameDecoder output -&gt; FixParser -&gt; inbound RingBuffer&lt;OrderEvent&gt;.&#10;onFrame(byte[]) parses one complete FIX message into a reusable scratch,&#10;stamps a receipt timestamp, and publishes to the ring on success; rejects&#10;are logged at the boundary (SRS §5.4) and dropped.&#10;&#10;- Parse into reusable scratch, copy-publish on success via a stored&#10;  non-capturing EventTranslatorOneArg: the Disruptor can't abandon a&#10;  claimed sequence, so rejects never touch the ring and the engine stays&#10;  unaware of them (boundary separation, SRS §5.5)&#10;- Timestamp stamped here (deferred from the parser, Step 5) via System.nanoTime;&#10;  monotonic high-res source for the §6.3 latency benchmark. Package-private&#10;  clock ctor injects a fixed clock for deterministic tests&#10;- Sole inbound producer (single-writer, SRS §5.2): ProducerType.SINGLE,&#10;  onFrame not thread-safe by design&#10;- Imports com.lmax (ring producer) but not io.netty; decoder-&gt;gateway&#10;  adapter deferred to Phase 4&#10;- Tests reuse the Step 6.5 CapturingOrderHandler over the real InboundPipeline:&#10;  valid D/F reach the ring, corrupt-checksum and null frames are dropped,&#10;  slot reuse shows no field bleed" />
   </component>
 </project>

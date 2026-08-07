@@ -4,8 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e1aea6c6-22a5-4fbf-ab3b-b1fb46959b08" name="Changes" comment="Implemented the outbound ring buffer">
-      <change afterPath="$PROJECT_DIR$/src/test/java/event/CapturingExecutionHandler.java" afterDir="false" />
+    <list default="true" id="e1aea6c6-22a5-4fbf-ab3b-b1fb46959b08" name="Changes" comment="feat(event): outbound pipeline — ExecutionEvent carrier, factory, Disruptor, adapter&#10;&#10;- ExecutionEvent / ExecutionEventType (SRS §3.4) + ExecutionEventFactory&#10;- OutboundPipeline: single-producer Disruptor&lt;ExecutionEvent&gt;, BlockingWaitStrategy,&#10;  fan-out subscribers each with their own sequence&#10;- MatchingEngineHandler: EventHandler&lt;OrderEvent&gt; + ExecutionListener; builds the&#10;  Order (domain validation fires here), drives matching, publishes one event per&#10;  fill plus accepted/cancelled/rejected. Injectable clock mirrors the gateway seam&#10;- Tests: CapturingExecutionHandler + accept/fill/partial/cancel/reject coverage">
+      <change afterPath="$PROJECT_DIR$/src/test/java/integration/EndToEndPipelineTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -54,49 +55,66 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;Application.DefaultConfig.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.All in OrderBookDemo.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.FixFrameDecoderTest.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.FixParserChecksumTest.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.FixParserPriceTest.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.FixParserScanTest.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.FixParserTest.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.InboundPipelineTest.executor&quot;: &quot;Run&quot;,
-    &quot;JUnit.OrderGatewayTest.executor&quot;: &quot;Run&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_directory_selection&quot;: &quot;C:/Users/ddavi/IdeaProjects/LimitOrderBook/src/test/java&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/ddavi/IdeaProjects/Limit-Order-Management-System&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "Application.DefaultConfig.executor": "Run",
+    "JUnit.All in OrderBookDemo.executor": "Run",
+    "JUnit.FixFrameDecoderTest.executor": "Run",
+    "JUnit.FixParserChecksumTest.executor": "Run",
+    "JUnit.FixParserPriceTest.executor": "Run",
+    "JUnit.FixParserScanTest.executor": "Run",
+    "JUnit.FixParserTest.executor": "Run",
+    "JUnit.InboundPipelineTest.executor": "Run",
+    "JUnit.MatchingEngineHandlerTest.executor": "Run",
+    "JUnit.OrderGatewayTest.executor": "Run",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.MCP Project settings loaded": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "git-widget-placeholder": "main",
+    "kotlin-language-version-configured": "true",
+    "last_directory_selection": "C:/Users/ddavi/IdeaProjects/LimitOrderBook/src/test/java",
+    "last_opened_file_path": "C:/Users/ddavi/IdeaProjects/Limit-Order-Management-System",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "Modules",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.2",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="MoveClassesOrPackagesDialog.RECENTS_KEY">
+      <recent name="engine" />
       <recent name="" />
     </key>
   </component>
-  <component name="RunManager" selected="JUnit.OrderGatewayTest">
+  <component name="RunManager" selected="JUnit.EndToEndPipelineTest">
     <configuration name="DefaultConfig" type="Application" factoryName="Application">
       <option name="MAIN_CLASS_NAME" value="Main" />
       <module name="OrderBookDemo" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="EndToEndPipelineTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="OrderBookDemo" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="integration.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="integration" />
+      <option name="MAIN_CLASS_NAME" value="integration.EndToEndPipelineTest" />
+      <option name="TEST_OBJECT" value="class" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -116,36 +134,6 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="FixParserChecksumTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
-      <module name="OrderBookDemo" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="gateway.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <option name="PACKAGE_NAME" value="gateway" />
-      <option name="MAIN_CLASS_NAME" value="gateway.FixParserChecksumTest" />
-      <option name="TEST_OBJECT" value="class" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="FixParserTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
-      <module name="OrderBookDemo" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="gateway.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <option name="PACKAGE_NAME" value="gateway" />
-      <option name="MAIN_CLASS_NAME" value="gateway.FixParserTest" />
-      <option name="TEST_OBJECT" value="class" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="InboundPipelineTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="OrderBookDemo" />
       <extension name="coverage">
@@ -156,6 +144,21 @@
       </extension>
       <option name="PACKAGE_NAME" value="event" />
       <option name="MAIN_CLASS_NAME" value="event.InboundPipelineTest" />
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="MatchingEngineHandlerTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="OrderBookDemo" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="engine.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="engine" />
+      <option name="MAIN_CLASS_NAME" value="engine.MatchingEngineHandlerTest" />
       <option name="TEST_OBJECT" value="class" />
       <method v="2">
         <option name="Make" enabled="true" />
@@ -178,11 +181,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="JUnit.EndToEndPipelineTest" />
+        <item itemvalue="JUnit.MatchingEngineHandlerTest" />
         <item itemvalue="JUnit.OrderGatewayTest" />
         <item itemvalue="JUnit.InboundPipelineTest" />
         <item itemvalue="JUnit.FixFrameDecoderTest" />
-        <item itemvalue="JUnit.FixParserTest" />
-        <item itemvalue="JUnit.FixParserChecksumTest" />
       </list>
     </recent_temporary>
   </component>
@@ -214,7 +217,7 @@
       <workItem from="1785119762806" duration="5182000" />
       <workItem from="1785875598878" duration="3583000" />
       <workItem from="1786071974533" duration="165000" />
-      <workItem from="1786072171749" duration="3573000" />
+      <workItem from="1786072171749" duration="4862000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit: Order Book Demo project">
       <option name="closed" value="true" />
@@ -440,7 +443,15 @@
       <option name="project" value="LOCAL" />
       <updated>1786077596326</updated>
     </task>
-    <option name="localTasksCounter" value="29" />
+    <task id="LOCAL-00029" summary="feat(event): outbound pipeline — ExecutionEvent carrier, factory, Disruptor, adapter&#10;&#10;- ExecutionEvent / ExecutionEventType (SRS §3.4) + ExecutionEventFactory&#10;- OutboundPipeline: single-producer Disruptor&lt;ExecutionEvent&gt;, BlockingWaitStrategy,&#10;  fan-out subscribers each with their own sequence&#10;- MatchingEngineHandler: EventHandler&lt;OrderEvent&gt; + ExecutionListener; builds the&#10;  Order (domain validation fires here), drives matching, publishes one event per&#10;  fill plus accepted/cancelled/rejected. Injectable clock mirrors the gateway seam&#10;- Tests: CapturingExecutionHandler + accept/fill/partial/cancel/reject coverage">
+      <option name="closed" value="true" />
+      <created>1786077921455</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1786077921455</updated>
+    </task>
+    <option name="localTasksCounter" value="30" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -470,6 +481,7 @@
     <MESSAGE value="Step 6.5: inbound Disruptor wiring (SRS §3.2)&#10;&#10;Add the inbound ring buffer so Step 7 has a buffer to produce into.&#10;&#10;- pom: add com.lmax:disruptor:4.0.0 (compile scope)&#10;- OrderEventFactory: pre-allocates empty OrderEvent slots; isolates the&#10;  sole com.lmax import in the event package (OrderEvent stays framework-free)&#10;- InboundPipeline: single-producer Disruptor&lt;OrderEvent&gt;, one consumer,&#10;  BlockingWaitStrategy (demo default), 1024-slot ring; exposes the RingBuffer&#10;- CapturingOrderHandler (test): reusable snapshot-recording consumer for&#10;  6.5 and Step 7; copies fields out to survive slot reuse&#10;- InboundPipelineTest: distinct/empty slots, publish round-trip, and&#10;  slot-reuse (size-1 ring) with no stale-field bleed" />
     <MESSAGE value="feat(gateway): implement OrderGateway inbound producer (Step 7)&#10;&#10;Wire FixFrameDecoder output -&gt; FixParser -&gt; inbound RingBuffer&lt;OrderEvent&gt;.&#10;onFrame(byte[]) parses one complete FIX message into a reusable scratch,&#10;stamps a receipt timestamp, and publishes to the ring on success; rejects&#10;are logged at the boundary (SRS §5.4) and dropped.&#10;&#10;- Parse into reusable scratch, copy-publish on success via a stored&#10;  non-capturing EventTranslatorOneArg: the Disruptor can't abandon a&#10;  claimed sequence, so rejects never touch the ring and the engine stays&#10;  unaware of them (boundary separation, SRS §5.5)&#10;- Timestamp stamped here (deferred from the parser, Step 5) via System.nanoTime;&#10;  monotonic high-res source for the §6.3 latency benchmark. Package-private&#10;  clock ctor injects a fixed clock for deterministic tests&#10;- Sole inbound producer (single-writer, SRS §5.2): ProducerType.SINGLE,&#10;  onFrame not thread-safe by design&#10;- Imports com.lmax (ring producer) but not io.netty; decoder-&gt;gateway&#10;  adapter deferred to Phase 4&#10;- Tests reuse the Step 6.5 CapturingOrderHandler over the real InboundPipeline:&#10;  valid D/F reach the ring, corrupt-checksum and null frames are dropped,&#10;  slot reuse shows no field bleed" />
     <MESSAGE value="Implemented the outbound ring buffer" />
-    <option name="LAST_COMMIT_MESSAGE" value="Implemented the outbound ring buffer" />
+    <MESSAGE value="feat(event): outbound pipeline — ExecutionEvent carrier, factory, Disruptor, adapter&#10;&#10;- ExecutionEvent / ExecutionEventType (SRS §3.4) + ExecutionEventFactory&#10;- OutboundPipeline: single-producer Disruptor&lt;ExecutionEvent&gt;, BlockingWaitStrategy,&#10;  fan-out subscribers each with their own sequence&#10;- MatchingEngineHandler: EventHandler&lt;OrderEvent&gt; + ExecutionListener; builds the&#10;  Order (domain validation fires here), drives matching, publishes one event per&#10;  fill plus accepted/cancelled/rejected. Injectable clock mirrors the gateway seam&#10;- Tests: CapturingExecutionHandler + accept/fill/partial/cancel/reject coverage" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat(event): outbound pipeline — ExecutionEvent carrier, factory, Disruptor, adapter&#10;&#10;- ExecutionEvent / ExecutionEventType (SRS §3.4) + ExecutionEventFactory&#10;- OutboundPipeline: single-producer Disruptor&lt;ExecutionEvent&gt;, BlockingWaitStrategy,&#10;  fan-out subscribers each with their own sequence&#10;- MatchingEngineHandler: EventHandler&lt;OrderEvent&gt; + ExecutionListener; builds the&#10;  Order (domain validation fires here), drives matching, publishes one event per&#10;  fill plus accepted/cancelled/rejected. Injectable clock mirrors the gateway seam&#10;- Tests: CapturingExecutionHandler + accept/fill/partial/cancel/reject coverage" />
   </component>
 </project>

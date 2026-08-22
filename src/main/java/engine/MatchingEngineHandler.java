@@ -2,6 +2,7 @@ package engine;
 
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.RingBuffer;
+import event.BookSnapshotEvent;
 import event.ExecutionEvent;
 import event.ExecutionEventType;
 import event.OrderEvent;
@@ -20,8 +21,13 @@ import java.util.function.LongSupplier;
  * deliberately never builds an Order. Match executions are reported back via the
  * ExecutionListener callbacks and published from there.
  *
+ * P4-2: also the sole producer of the SNAPSHOT ring. After each inbound event is
+ * processed, it reads a bounded depth snapshot off the engine (safe — this is the
+ * engine thread) and publishes it. Two rings, one producer, one thread: both stay
+ * SINGLE.
+ *
  * The injectable clock mirrors the OrderGateway seam (Step 7) for deterministic
- * tests and future JMH timestamping (SRS §6.3).
+ * tests and future JMH timestamping (SRS §6.3). It stamps BOTH outbound streams.
  */
 public final class MatchingEngineHandler implements EventHandler<OrderEvent>, ExecutionListener {
 
@@ -31,21 +37,50 @@ public final class MatchingEngineHandler implements EventHandler<OrderEvent>, Ex
 
     private final MatchingEngine engine;
     private final RingBuffer<ExecutionEvent> outbound;
+    /** Nullable: null means "no depth feed wired" (pre-Phase-4 callers, engine-only tests). */
+    private final RingBuffer<BookSnapshotEvent> snapshots;
     private final LongSupplier clock;
 
     public MatchingEngineHandler(MatchingEngine engine, RingBuffer<ExecutionEvent> outbound) {
-        this(engine, outbound, System::nanoTime);
+        this(engine, outbound, null, System::nanoTime);
     }
 
-    // Package-private clock seam for tests.
+    /** Phase 4 form: both outbound rings. Used by Main (P4-7). */
+    public MatchingEngineHandler(MatchingEngine engine,
+                                 RingBuffer<ExecutionEvent> outbound,
+                                 RingBuffer<BookSnapshotEvent> snapshots) {
+        this(engine, outbound, snapshots, System::nanoTime);
+    }
+
+    // Package-private clock seam for tests (no depth feed).
     MatchingEngineHandler(MatchingEngine engine, RingBuffer<ExecutionEvent> outbound, LongSupplier clock) {
+        this(engine, outbound, null, clock);
+    }
+
+    // Package-private clock seam for tests (with depth feed).
+    MatchingEngineHandler(MatchingEngine engine,
+                          RingBuffer<ExecutionEvent> outbound,
+                          RingBuffer<BookSnapshotEvent> snapshots,
+                          LongSupplier clock) {
         this.engine = engine;
         this.outbound = outbound;
+        this.snapshots = snapshots;
         this.clock = clock;
     }
 
+    /**
+     * Processes one inbound event, then publishes exactly one depth snapshot —
+     * on every path, including rejects. "One snapshot per inbound event" is a
+     * simpler invariant than "one per book-mutating event"; a redundant snapshot
+     * after a reject is harmless and costs nothing at demo volume.
+     */
     @Override
     public void onEvent(OrderEvent event, long sequence, boolean endOfBatch) {
+        process(event);
+        publishSnapshot();
+    }
+
+    private void process(OrderEvent event) {
         if (event.eventType == OrderEventType.CANCEL_ORDER) {
             boolean cancelled = engine.cancelOrder(event.originalOrderId);
             publish(cancelled ? ExecutionEventType.ORDER_CANCELLED : ExecutionEventType.ORDER_REJECTED,
@@ -108,6 +143,29 @@ public final class MatchingEngineHandler implements EventHandler<OrderEvent>, Ex
             e.timestamp         = clock.getAsLong();
         } finally {
             outbound.publish(seq);
+        }
+    }
+
+    /**
+     * Reads the book into a claimed snapshot slot and publishes it. Runs on the
+     * engine thread — the only thread that may read bids/asks unsynchronized.
+     *
+     * snapshotInto fills every scalar and the valid array prefix; the level counts
+     * are authoritative, so array tails beyond them are intentionally left stale
+     * (BookSnapshotEvent's reuse contract) and consumers must not read past the
+     * counts. The timestamp is then overwritten from the injected clock so both
+     * outbound streams share one time source.
+     */
+    private void publishSnapshot() {
+        if (snapshots == null) return;   // no depth feed wired
+
+        long seq = snapshots.next();
+        try {
+            BookSnapshotEvent s = snapshots.get(seq);
+            engine.snapshotInto(s, BookSnapshotEvent.MAX_DEPTH_LEVELS);
+            s.timestamp = clock.getAsLong();
+        } finally {
+            snapshots.publish(seq);
         }
     }
 }

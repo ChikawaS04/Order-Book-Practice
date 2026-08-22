@@ -1,5 +1,6 @@
 package engine;
 
+import event.BookSnapshotEvent;
 import model.Order;
 import model.Side;
 import model.Trade;
@@ -193,11 +194,62 @@ public class MatchingEngine implements BookView {
 
     @Override
     public long getBestBid() {
-        return bids.firstKey();
+        return bids.isEmpty() ? -1L : bids.firstKey();
     }
 
     @Override
     public long getBestAsk() {
-        return asks.firstKey();
+        return asks.isEmpty() ? -1L : asks.firstKey();
+    }
+
+    /**
+     * Writes a bounded top-N depth snapshot into a caller-owned, reusable carrier.
+     * Runs on the engine (consumer) thread only — the single thread that may read
+     * {@code bids}/{@code asks} without synchronization (SRS §5.2). P4-2's handler calls
+     * this at the end of each onEvent and publishes the slot on the snapshot ring.
+     *
+     * <p>Both sides are walked best-first (bids reverse-ordered, asks natural, so each map's
+     * iteration order is already best→worst), aggregating total resting quantity per price
+     * level, truncated at {@code min(maxLevels, MAX_DEPTH_LEVELS)}. {@code bestBid}/
+     * {@code bestAsk} carry the {@code -1L} empty-side sentinel. Fills all scalar fields and
+     * the valid array prefix every call; array tails beyond the level counts are left as-is
+     * (see the BookSnapshotEvent slot-reuse contract).
+     *
+     * <p><b>Allocation note.</b> The enhanced-for loops allocate map/deque iterators that do
+     * not escape this method, so C2 escape analysis is expected to scalar-replace them after
+     * warmup. To be validated under JMH in Phase 6; if they surface in allocation profiling,
+     * switch to cached iterators or a per-level aggregate maintained on add/fill/cancel.
+     */
+    public void snapshotInto(BookSnapshotEvent target, int maxLevels) {
+        int levels = Math.min(maxLevels, BookSnapshotEvent.MAX_DEPTH_LEVELS);
+
+        target.bidLevelCount = fillSide(bids, target.bidPrices, target.bidQtys, levels);
+        target.askLevelCount = fillSide(asks, target.askPrices, target.askQtys, levels);
+
+        target.bestBid = getBestBid();
+        target.bestAsk = getBestAsk();
+        target.timestamp = System.nanoTime();
+    }
+
+    /**
+     * Fills {@code prices}/{@code qtys} with up to {@code maxLevels} best-first levels from
+     * {@code book}, aggregating resting quantity per price level.
+     *
+     * @return the number of levels written (the authoritative count for this side)
+     */
+    private static int fillSide(TreeMap<Long, Deque<Order>> book,
+                                long[] prices, long[] qtys, int maxLevels) {
+        int i = 0;
+        for (Map.Entry<Long, Deque<Order>> entry : book.entrySet()) {
+            if (i == maxLevels) break;
+            long levelQty = 0;
+            for (Order o : entry.getValue()) {
+                levelQty += o.getQuantity();
+            }
+            prices[i] = entry.getKey();
+            qtys[i] = levelQty;
+            i++;
+        }
+        return i;
     }
 }

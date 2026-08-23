@@ -4,19 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e1aea6c6-22a5-4fbf-ab3b-b1fb46959b08" name="Changes" comment="test(integration): end-to-end pipeline test (Step 8, SRS §6.2)&#10;&#10;Drive raw FIX wire bytes in at the front, assert ExecutionEvents at an&#10;outbound subscriber — the full path bytes -&gt; FixFrameDecoder -&gt; OrderGateway&#10;-&gt; inbound ring -&gt; MatchingEngineHandler -&gt; outbound ring -&gt; subscriber.&#10;&#10;- Option A framing: real FixFrameDecoder in an EmbeddedChannel; the test&#10;  plays the thin Netty-&gt;gateway adapter (production adapter is Phase 4),&#10;  draining each decoded byte[] frame into gateway.onFrame&#10;- Covers accept, full fill, partial-then-rested-remainder, cancel, reject&#10;  (unknown id), and a checksum-invalid frame dropped at the gateway boundary&#10;  (SRS §5.4) with nothing reaching the ring&#10;- Assertions match the 7.5 emission model verbatim: passive-price fills,&#10;  aggressor remaining, tradeId, trailing ACCEPTED for a rested remainder&#10;- Async-safe via CapturingExecutionHandler.awaitAtLeast; deterministic order&#10;  from single-consumer FIFO + synchronous in-callback publish">
-      <change afterPath="$PROJECT_DIR$/src/main/java/event/BookSnapshotEvent.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/event/BookSnapshotEventFactory.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/event/SnapshotPipeline.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/net/package_info.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/engine/MatchingEngineBookReadTest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/engine/MatchingEngineHandlerSnapshotTest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/engine/MatchingEngineSnapshotTest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/event/CapturingSnapshotHandler.java" afterDir="false" />
+    <list default="true" id="e1aea6c6-22a5-4fbf-ab3b-b1fb46959b08" name="Changes" comment="feat: Phase 4 depth pipeline — deps, empty-book fix, book snapshots (P4-0..P4-2)">
+      <change afterPath="$PROJECT_DIR$/src/main/java/publisher/TradeLogger.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/market/MarketDataServiceTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/publisher/TradeLoggerTest.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/engine/MatchingEngine.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/engine/MatchingEngine.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/engine/MatchingEngineHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/engine/MatchingEngineHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/market/MarketDataService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/market/MarketDataService.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -24,7 +17,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="44" />
+    <option name="cachedIndexableFilesCount" value="52" />
     <option name="fileBasedEmbeddingIndicesEnabled" value="true" />
   </component>
   <component name="FileTemplateManagerImpl">
@@ -77,11 +70,13 @@
     "JUnit.FixParserScanTest.executor": "Run",
     "JUnit.FixParserTest.executor": "Run",
     "JUnit.InboundPipelineTest.executor": "Run",
+    "JUnit.MarketDataServiceTest.executor": "Run",
     "JUnit.MatchingEngineBookReadTest.executor": "Run",
     "JUnit.MatchingEngineHandlerSnapshotTest.executor": "Run",
     "JUnit.MatchingEngineHandlerTest.executor": "Run",
     "JUnit.MatchingEngineSnapshotTest.executor": "Run",
     "JUnit.OrderGatewayTest.executor": "Run",
+    "JUnit.TradeLoggerTest.executor": "Run",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.MCP Project settings loaded": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
@@ -110,7 +105,7 @@
       <recent name="" />
     </key>
   </component>
-  <component name="RunManager" selected="JUnit.MatchingEngineHandlerSnapshotTest">
+  <component name="RunManager" selected="JUnit.TradeLoggerTest">
     <configuration name="DefaultConfig" type="Application" factoryName="Application">
       <option name="MAIN_CLASS_NAME" value="Main" />
       <module name="OrderBookDemo" />
@@ -118,16 +113,16 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="EndToEndPipelineTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+    <configuration name="MarketDataServiceTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="OrderBookDemo" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="integration.*" />
+          <option name="PATTERN" value="market.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
-      <option name="PACKAGE_NAME" value="integration" />
-      <option name="MAIN_CLASS_NAME" value="integration.EndToEndPipelineTest" />
+      <option name="PACKAGE_NAME" value="market" />
+      <option name="MAIN_CLASS_NAME" value="market.MarketDataServiceTest" />
       <option name="TEST_OBJECT" value="class" />
       <method v="2">
         <option name="Make" enabled="true" />
@@ -163,21 +158,6 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="MatchingEngineHandlerTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
-      <module name="OrderBookDemo" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="engine.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <option name="PACKAGE_NAME" value="engine" />
-      <option name="MAIN_CLASS_NAME" value="engine.MatchingEngineHandlerTest" />
-      <option name="TEST_OBJECT" value="class" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
     <configuration name="MatchingEngineSnapshotTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="OrderBookDemo" />
       <extension name="coverage">
@@ -193,13 +173,28 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="TradeLoggerTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="OrderBookDemo" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="publisher.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="publisher" />
+      <option name="MAIN_CLASS_NAME" value="publisher.TradeLoggerTest" />
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="JUnit.TradeLoggerTest" />
+        <item itemvalue="JUnit.MarketDataServiceTest" />
         <item itemvalue="JUnit.MatchingEngineHandlerSnapshotTest" />
         <item itemvalue="JUnit.MatchingEngineSnapshotTest" />
         <item itemvalue="JUnit.MatchingEngineBookReadTest" />
-        <item itemvalue="JUnit.EndToEndPipelineTest" />
-        <item itemvalue="JUnit.MatchingEngineHandlerTest" />
       </list>
     </recent_temporary>
   </component>
@@ -234,7 +229,8 @@
       <workItem from="1786072171749" duration="5606000" />
       <workItem from="1786132546044" duration="186000" />
       <workItem from="1786133519346" duration="377000" />
-      <workItem from="1787330136151" duration="5618000" />
+      <workItem from="1787330136151" duration="6851000" />
+      <workItem from="1787452481688" duration="1673000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit: Order Book Demo project">
       <option name="closed" value="true" />
@@ -476,14 +472,21 @@
       <option name="project" value="LOCAL" />
       <updated>1786080186295</updated>
     </task>
-    <option name="localTasksCounter" value="31" />
+    <task id="LOCAL-00031" summary="feat: Phase 4 depth pipeline — deps, empty-book fix, book snapshots (P4-0..P4-2)">
+      <option name="closed" value="true" />
+      <created>1787419991503</created>
+      <option name="number" value="00031" />
+      <option name="presentableId" value="LOCAL-00031" />
+      <option name="project" value="LOCAL" />
+      <updated>1787419991503</updated>
+    </task>
+    <option name="localTasksCounter" value="32" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Initial commit: Order Book Demo project&#10;&#10;Co-Authored-By: Claude Sonnet 4.6 &lt;noreply@anthropic.com&gt;" />
     <MESSAGE value="Initial commit: Order Book Demo project" />
     <MESSAGE value="Working on version control bugs" />
     <MESSAGE value="Added trade record and fill method to Order class. Currently implementing the matching engine logic." />
@@ -508,6 +511,7 @@
     <MESSAGE value="Implemented the outbound ring buffer" />
     <MESSAGE value="feat(event): outbound pipeline — ExecutionEvent carrier, factory, Disruptor, adapter&#10;&#10;- ExecutionEvent / ExecutionEventType (SRS §3.4) + ExecutionEventFactory&#10;- OutboundPipeline: single-producer Disruptor&lt;ExecutionEvent&gt;, BlockingWaitStrategy,&#10;  fan-out subscribers each with their own sequence&#10;- MatchingEngineHandler: EventHandler&lt;OrderEvent&gt; + ExecutionListener; builds the&#10;  Order (domain validation fires here), drives matching, publishes one event per&#10;  fill plus accepted/cancelled/rejected. Injectable clock mirrors the gateway seam&#10;- Tests: CapturingExecutionHandler + accept/fill/partial/cancel/reject coverage" />
     <MESSAGE value="test(integration): end-to-end pipeline test (Step 8, SRS §6.2)&#10;&#10;Drive raw FIX wire bytes in at the front, assert ExecutionEvents at an&#10;outbound subscriber — the full path bytes -&gt; FixFrameDecoder -&gt; OrderGateway&#10;-&gt; inbound ring -&gt; MatchingEngineHandler -&gt; outbound ring -&gt; subscriber.&#10;&#10;- Option A framing: real FixFrameDecoder in an EmbeddedChannel; the test&#10;  plays the thin Netty-&gt;gateway adapter (production adapter is Phase 4),&#10;  draining each decoded byte[] frame into gateway.onFrame&#10;- Covers accept, full fill, partial-then-rested-remainder, cancel, reject&#10;  (unknown id), and a checksum-invalid frame dropped at the gateway boundary&#10;  (SRS §5.4) with nothing reaching the ring&#10;- Assertions match the 7.5 emission model verbatim: passive-price fills,&#10;  aggressor remaining, tradeId, trailing ACCEPTED for a rested remainder&#10;- Async-safe via CapturingExecutionHandler.awaitAtLeast; deterministic order&#10;  from single-consumer FIFO + synchronous in-callback publish" />
-    <option name="LAST_COMMIT_MESSAGE" value="test(integration): end-to-end pipeline test (Step 8, SRS §6.2)&#10;&#10;Drive raw FIX wire bytes in at the front, assert ExecutionEvents at an&#10;outbound subscriber — the full path bytes -&gt; FixFrameDecoder -&gt; OrderGateway&#10;-&gt; inbound ring -&gt; MatchingEngineHandler -&gt; outbound ring -&gt; subscriber.&#10;&#10;- Option A framing: real FixFrameDecoder in an EmbeddedChannel; the test&#10;  plays the thin Netty-&gt;gateway adapter (production adapter is Phase 4),&#10;  draining each decoded byte[] frame into gateway.onFrame&#10;- Covers accept, full fill, partial-then-rested-remainder, cancel, reject&#10;  (unknown id), and a checksum-invalid frame dropped at the gateway boundary&#10;  (SRS §5.4) with nothing reaching the ring&#10;- Assertions match the 7.5 emission model verbatim: passive-price fills,&#10;  aggressor remaining, tradeId, trailing ACCEPTED for a rested remainder&#10;- Async-safe via CapturingExecutionHandler.awaitAtLeast; deterministic order&#10;  from single-consumer FIFO + synchronous in-callback publish" />
+    <MESSAGE value="feat: Phase 4 depth pipeline — deps, empty-book fix, book snapshots (P4-0..P4-2)" />
+    <option name="LAST_COMMIT_MESSAGE" value="feat: Phase 4 depth pipeline — deps, empty-book fix, book snapshots (P4-0..P4-2)" />
   </component>
 </project>

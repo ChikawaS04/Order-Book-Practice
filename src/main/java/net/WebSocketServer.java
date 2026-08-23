@@ -1,5 +1,7 @@
 package net;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import gateway.OrderGateway;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
@@ -21,16 +23,15 @@ import org.slf4j.LoggerFactory;
 import java.net.InetSocketAddress;
 
 /**
- * Netty WebSocket server (SRS §3.6). P4-4 scaffold: stands up the reactor, exposes {@code /ws},
- * and registers each fully-handshaken client in a shared {@link ChannelGroup}. No business
- * logic yet — P4-5 wires the inbound frame path into the FIX gateway, P4-6 fans execution/
- * book frames out over the same group.
+ * Netty WebSocket server (SRS §3.6). Exposes {@code /ws}, registers handshaken clients in a
+ * shared {@link ChannelGroup}, and feeds inbound manual orders to the FIX gateway (P4-5).
  *
- * <p><b>Single-writer invariant (guide decision 2).</b> The worker group is <b>one thread</b>,
- * so every inbound publish happens on a single thread and the inbound Disruptor stays
- * {@code ProducerType.SINGLE} (§5.2). Do not widen the worker group without revisiting that.
+ * <p><b>Single-writer invariant (decision 2).</b> The worker group is <b>one thread</b>, so every
+ * {@code onFrame} publish happens on one thread and the inbound Disruptor stays
+ * {@code ProducerType.SINGLE} (§5.2). Do not widen the worker group.
  *
- * <p>{@code ws://}, no TLS (demo, §3.6).
+ * <p>{@code ws://}, no TLS (§3.6). One shared {@link ObjectMapper} — only ever touched by the
+ * single worker thread.
  */
 public final class WebSocketServer {
 
@@ -40,8 +41,8 @@ public final class WebSocketServer {
     private static final int MAX_HTTP_CONTENT_LENGTH = 64 * 1024;
 
     private final int port;
-
-    /** Connected, fully-handshaken clients. Shared with the publisher (P4-6). Auto-evicts on close. */
+    private final OrderGateway gateway;
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private final ChannelGroup channelGroup =
             new DefaultChannelGroup("ws-clients", GlobalEventExecutor.INSTANCE);
 
@@ -49,8 +50,9 @@ public final class WebSocketServer {
     private EventLoopGroup workerGroup;
     private Channel serverChannel;
 
-    public WebSocketServer(int port) {
+    public WebSocketServer(int port, OrderGateway gateway) {
         this.port = port;
+        this.gateway = gateway;
     }
 
     /** Shared connected-client registry; P4-6's publisher writes execution/book frames to this. */
@@ -63,9 +65,7 @@ public final class WebSocketServer {
         return ((InetSocketAddress) serverChannel.localAddress()).getPort();
     }
 
-    /** Bind and begin accepting. Blocks until the listen socket is bound. */
     public void start() throws InterruptedException {
-        // 4.2 API: NioEventLoopGroup is deprecated; use MultiThreadIoEventLoopGroup + NioIoHandler.
         bossGroup = new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory());
         workerGroup = new MultiThreadIoEventLoopGroup(1, NioIoHandler.newFactory()); // single worker
 
@@ -79,7 +79,7 @@ public final class WebSocketServer {
                         p.addLast(new HttpServerCodec());
                         p.addLast(new HttpObjectAggregator(MAX_HTTP_CONTENT_LENGTH));
                         p.addLast(new WebSocketServerProtocolHandler(WEBSOCKET_PATH));
-                        p.addLast(new WebSocketFrameHandler(channelGroup));
+                        p.addLast(new WebSocketFrameHandler(channelGroup, gateway, objectMapper));
                     }
                 });
 
@@ -87,7 +87,6 @@ public final class WebSocketServer {
         log.info("WebSocket server listening on ws://0.0.0.0:{}{}", boundPort(), WEBSOCKET_PATH);
     }
 
-    /** Stop accepting, close every client channel, release the loops. Reverse order of start(). */
     public void stop() throws InterruptedException {
         if (serverChannel != null) {
             serverChannel.close().sync();

@@ -1,5 +1,8 @@
 package net;
 
+import event.CapturingOrderHandler;
+import event.InboundPipeline;
+import gateway.OrderGateway;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -27,15 +30,19 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Real loopback proof: the server binds, a real Netty WS client handshakes, and the server
- *  registers then drops the client in its ChannelGroup. */
+/** Real loopback proof: server binds, a real Netty WS client handshakes, the server registers
+ *  then drops the client in its ChannelGroup. */
 class WebSocketServerTest {
 
+    private InboundPipeline pipeline;
     private WebSocketServer server;
 
     @BeforeEach
     void startServer() throws InterruptedException {
-        server = new WebSocketServer(0); // ephemeral port
+        pipeline = new InboundPipeline(new CapturingOrderHandler());
+        pipeline.start();
+        OrderGateway gateway = new OrderGateway(pipeline.getRingBuffer());
+        server = new WebSocketServer(0, gateway); // ephemeral port
         server.start();
     }
 
@@ -43,6 +50,9 @@ class WebSocketServerTest {
     void stopServer() throws InterruptedException {
         if (server != null) {
             server.stop();
+        }
+        if (pipeline != null) {
+            pipeline.shutdown();
         }
     }
 
@@ -76,7 +86,7 @@ class WebSocketServerTest {
 
                                 @Override
                                 protected void channelRead0(ChannelHandlerContext ctx, WebSocketFrame frame) {
-                                    // no server->client frames in P4-4
+                                    // no server->client frames in this test
                                 }
                             });
                         }
@@ -94,7 +104,6 @@ class WebSocketServerTest {
         }
     }
 
-    /** Group membership updates on the server's event loop, so poll with a bounded deadline. */
     private boolean awaitGroupSize(int expected, long timeoutMillis) throws InterruptedException {
         long deadline = System.nanoTime() + TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
         while (System.nanoTime() < deadline) {

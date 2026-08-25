@@ -4,14 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e1aea6c6-22a5-4fbf-ab3b-b1fb46959b08" name="Changes" comment="feat(net): Netty WebSocket server scaffold with /ws and shared ChannelGroup (P4-4)&#10;&#10;Stand up the SRS §3.6 WebSocket edge; no business logic yet.&#10;&#10;- WebSocketServer: ServerBootstrap on a single-thread boss + single-thread&#10;  worker group (decision 2 — preserves the single inbound producer). Pipeline is&#10;  HttpServerCodec -&gt; HttpObjectAggregator -&gt; WebSocketServerProtocolHandler(&quot;/ws&quot;)&#10;  -&gt; WebSocketFrameHandler. Owns a DefaultChannelGroup exposed via getChannelGroup()&#10;  for the P4-6 publisher to fan out over. start()/stop(), boundPort() for&#10;  ephemeral-port tests. ws://, no TLS.&#10;- WebSocketFrameHandler: registers the channel in the group on HandshakeComplete&#10;  (not channelActive, so a still-upgrading HTTP channel never joins the broadcast&#10;  group); DefaultChannelGroup auto-removes on close. channelRead0 is a stub for P4-5.&#10;- Uses the Netty 4.2 event-loop API (MultiThreadIoEventLoopGroup + NioIoHandler,&#10;  since NioEventLoopGroup is deprecated in 4.2).&#10;- Tests: WebSocketFrameHandlerTest (EmbeddedChannel membership contract) and&#10;  WebSocketServerTest (real loopback handshake join/leave). All green.">
-      <change afterPath="$PROJECT_DIR$/src/main/java/net/JsonToFix.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/test/java/gateway/JsonToFixParseTest.java" afterDir="false" />
+    <list default="true" id="e1aea6c6-22a5-4fbf-ab3b-b1fb46959b08" name="Changes" comment="feat(net): route manual WebSocket orders through the FIX gateway (P4-5)&#10;&#10;Wire the WS inbound edge to the real FIX path so the gateway stays live in&#10;the running demo (decision 1). All on the single worker thread — inbound&#10;stays ProducerType.SINGLE (§5.2).&#10;&#10;- JsonToFix: promote the Phase-3 msg(...) builder to production. Emits 35=D&#10;  (11,55,54,38,44) and 35=F (11,41) FIX 4.2 bytes with correct 8=/9= body&#10;  length and 10= checksum. Framework-free (FixConstants + Side only). Prices&#10;  arrive as integer cents and are formatted to FIX decimal dollars here — the&#10;  single cents&lt;-&gt;FIX bridge.&#10;- WebSocketFrameHandler: channelRead0 handles TextWebSocketFrame — Jackson&#10;  readTree -&gt; dispatch on &quot;type&quot; -&gt; JsonToFix -&gt; OrderGateway.onFrame.&#10;  Malformed/unknown/invalid-side dropped and logged at the boundary (§5.4).&#10;  FixFrameDecoder is not used here: a WS frame is already one message, so&#10;  JsonToFix output goes straight to onFrame; the decoder stays reserved for a&#10;  future raw-FIX TCP acceptor.&#10;- WebSocketServer: constructor now takes the OrderGateway and owns one shared&#10;  ObjectMapper, passed into each per-channel handler.&#10;- Tests: JsonToFixParseTest (round-trip through the real FixParser: field&#10;  mapping, side 1/2, price formatting, wrong-symbol reject); WebSocketFrameHandlerTest&#10;  (membership + inbound NEW/SELL/CANCEL/malformed/unknown/invalid-side/wrong-symbol);&#10;  WebSocketServerTest updated for the new constructor. All green.">
+      <change afterPath="$PROJECT_DIR$/src/main/java/publisher/WebSocketPublisher.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/publisher/WebSocketPublisherTest.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/net/WebSocketFrameHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/net/WebSocketFrameHandler.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/net/WebSocketServer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/net/WebSocketServer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/net/WebSocketFrameHandlerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/net/WebSocketFrameHandlerTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/net/WebSocketServerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/net/WebSocketServerTest.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -19,7 +15,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="52" />
+    <option name="cachedIndexableFilesCount" value="63" />
     <option name="fileBasedEmbeddingIndicesEnabled" value="true" />
   </component>
   <component name="FileTemplateManagerImpl">
@@ -80,6 +76,7 @@
     "JUnit.OrderGatewayTest.executor": "Run",
     "JUnit.TradeLoggerTest.executor": "Run",
     "JUnit.WebSocketFrameHandlerTest.executor": "Run",
+    "JUnit.WebSocketPublisherTest.executor": "Run",
     "JUnit.WebSocketServerTest.executor": "Run",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.MCP Project settings loaded": "true",
@@ -100,6 +97,7 @@
     "project.structure.last.edited": "Modules",
     "project.structure.proportion": "0.15",
     "project.structure.side.proportion": "0.2",
+    "settings.editor.selected.configurable": "preferences.pluginManager",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -109,7 +107,7 @@
       <recent name="" />
     </key>
   </component>
-  <component name="RunManager" selected="JUnit.WebSocketServerTest">
+  <component name="RunManager" selected="JUnit.WebSocketPublisherTest">
     <configuration name="DefaultConfig" type="Application" factoryName="Application">
       <option name="MAIN_CLASS_NAME" value="Main" />
       <module name="OrderBookDemo" />
@@ -127,21 +125,6 @@
       </extension>
       <option name="PACKAGE_NAME" value="market" />
       <option name="MAIN_CLASS_NAME" value="market.MarketDataServiceTest" />
-      <option name="TEST_OBJECT" value="class" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="MatchingEngineHandlerSnapshotTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
-      <module name="OrderBookDemo" />
-      <extension name="coverage">
-        <pattern>
-          <option name="PATTERN" value="engine.*" />
-          <option name="ENABLED" value="true" />
-        </pattern>
-      </extension>
-      <option name="PACKAGE_NAME" value="engine" />
-      <option name="MAIN_CLASS_NAME" value="engine.MatchingEngineHandlerSnapshotTest" />
       <option name="TEST_OBJECT" value="class" />
       <method v="2">
         <option name="Make" enabled="true" />
@@ -177,6 +160,21 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="WebSocketPublisherTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="OrderBookDemo" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="publisher.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="publisher" />
+      <option name="MAIN_CLASS_NAME" value="publisher.WebSocketPublisherTest" />
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="WebSocketServerTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="OrderBookDemo" />
       <extension name="coverage">
@@ -194,11 +192,11 @@
     </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="JUnit.WebSocketPublisherTest" />
         <item itemvalue="JUnit.WebSocketServerTest" />
         <item itemvalue="JUnit.WebSocketFrameHandlerTest" />
         <item itemvalue="JUnit.TradeLoggerTest" />
         <item itemvalue="JUnit.MarketDataServiceTest" />
-        <item itemvalue="JUnit.MatchingEngineHandlerSnapshotTest" />
       </list>
     </recent_temporary>
   </component>
@@ -234,7 +232,9 @@
       <workItem from="1786132546044" duration="186000" />
       <workItem from="1786133519346" duration="377000" />
       <workItem from="1787330136151" duration="6851000" />
-      <workItem from="1787452481688" duration="3860000" />
+      <workItem from="1787452481688" duration="3952000" />
+      <workItem from="1787460741163" duration="171000" />
+      <workItem from="1787671643518" duration="4322000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit: Order Book Demo project">
       <option name="closed" value="true" />
@@ -500,14 +500,21 @@
       <option name="project" value="LOCAL" />
       <updated>1787455889411</updated>
     </task>
-    <option name="localTasksCounter" value="34" />
+    <task id="LOCAL-00034" summary="feat(net): route manual WebSocket orders through the FIX gateway (P4-5)&#10;&#10;Wire the WS inbound edge to the real FIX path so the gateway stays live in&#10;the running demo (decision 1). All on the single worker thread — inbound&#10;stays ProducerType.SINGLE (§5.2).&#10;&#10;- JsonToFix: promote the Phase-3 msg(...) builder to production. Emits 35=D&#10;  (11,55,54,38,44) and 35=F (11,41) FIX 4.2 bytes with correct 8=/9= body&#10;  length and 10= checksum. Framework-free (FixConstants + Side only). Prices&#10;  arrive as integer cents and are formatted to FIX decimal dollars here — the&#10;  single cents&lt;-&gt;FIX bridge.&#10;- WebSocketFrameHandler: channelRead0 handles TextWebSocketFrame — Jackson&#10;  readTree -&gt; dispatch on &quot;type&quot; -&gt; JsonToFix -&gt; OrderGateway.onFrame.&#10;  Malformed/unknown/invalid-side dropped and logged at the boundary (§5.4).&#10;  FixFrameDecoder is not used here: a WS frame is already one message, so&#10;  JsonToFix output goes straight to onFrame; the decoder stays reserved for a&#10;  future raw-FIX TCP acceptor.&#10;- WebSocketServer: constructor now takes the OrderGateway and owns one shared&#10;  ObjectMapper, passed into each per-channel handler.&#10;- Tests: JsonToFixParseTest (round-trip through the real FixParser: field&#10;  mapping, side 1/2, price formatting, wrong-symbol reject); WebSocketFrameHandlerTest&#10;  (membership + inbound NEW/SELL/CANCEL/malformed/unknown/invalid-side/wrong-symbol);&#10;  WebSocketServerTest updated for the new constructor. All green.">
+      <option name="closed" value="true" />
+      <created>1787457364122</created>
+      <option name="number" value="00034" />
+      <option name="presentableId" value="LOCAL-00034" />
+      <option name="project" value="LOCAL" />
+      <updated>1787457364122</updated>
+    </task>
+    <option name="localTasksCounter" value="35" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Added trade record and fill method to Order class. Currently implementing the matching engine logic." />
     <MESSAGE value="Implementing logic for matching buy orders with best ask orders" />
     <MESSAGE value="Implemented matching for buy and sell orders" />
     <MESSAGE value="feat: implement order submission, cancellation, and book display&#10;&#10;- addOrder: routes to matchBuy/matchSell, rests unfilled quantity&#10;- addToBook: inserts order into price level queue via computeIfAbsent&#10;- cancelOrder: marks order cancelled and removes from book with O(n) lookup&#10;- printBook: displays current bid/ask book state" />
@@ -532,6 +539,7 @@
     <MESSAGE value="feat: Phase 4 depth pipeline — deps, empty-book fix, book snapshots (P4-0..P4-2)" />
     <MESSAGE value="feat(market,publisher): add outbound subscribers MarketDataService and TradeLogger (P4-3)&#10;&#10;Wire the two non-WebSocket subscribers of SRS §3.5 onto the outbound rings.&#10;&#10;- MarketDataService: rebuilt from a BookView pull-wrapper into an&#10;  EventHandler&lt;BookSnapshotEvent&gt; push consumer on the snapshot ring. Derives&#10;  best bid/ask, midpoint, and spread inside onEvent (slot-reuse safe) and&#10;  publishes a coherent immutable Quote via a single volatile store. Midpoint&#10;  stored exactly in half-cents; getMidpoint() keeps the Phase-1 whole-cent&#10;  contract, getMidpointHalfCents() gives the exact value. Constructor now no-arg&#10;  (BookView dependency dropped).&#10;- TradeLogger: new EventHandler&lt;ExecutionEvent&gt; server-side trade tape. Emits on&#10;  ORDER_FILLED / ORDER_PARTIALLY_FILLED only, silent on accept/cancel/reject.&#10;  SLF4J boundary logging; injectable Consumer sink for testability.&#10;- Tests: MarketDataServiceTest (7), TradeLoggerTest (8) — all green." />
     <MESSAGE value="feat(net): Netty WebSocket server scaffold with /ws and shared ChannelGroup (P4-4)&#10;&#10;Stand up the SRS §3.6 WebSocket edge; no business logic yet.&#10;&#10;- WebSocketServer: ServerBootstrap on a single-thread boss + single-thread&#10;  worker group (decision 2 — preserves the single inbound producer). Pipeline is&#10;  HttpServerCodec -&gt; HttpObjectAggregator -&gt; WebSocketServerProtocolHandler(&quot;/ws&quot;)&#10;  -&gt; WebSocketFrameHandler. Owns a DefaultChannelGroup exposed via getChannelGroup()&#10;  for the P4-6 publisher to fan out over. start()/stop(), boundPort() for&#10;  ephemeral-port tests. ws://, no TLS.&#10;- WebSocketFrameHandler: registers the channel in the group on HandshakeComplete&#10;  (not channelActive, so a still-upgrading HTTP channel never joins the broadcast&#10;  group); DefaultChannelGroup auto-removes on close. channelRead0 is a stub for P4-5.&#10;- Uses the Netty 4.2 event-loop API (MultiThreadIoEventLoopGroup + NioIoHandler,&#10;  since NioEventLoopGroup is deprecated in 4.2).&#10;- Tests: WebSocketFrameHandlerTest (EmbeddedChannel membership contract) and&#10;  WebSocketServerTest (real loopback handshake join/leave). All green." />
-    <option name="LAST_COMMIT_MESSAGE" value="feat(net): Netty WebSocket server scaffold with /ws and shared ChannelGroup (P4-4)&#10;&#10;Stand up the SRS §3.6 WebSocket edge; no business logic yet.&#10;&#10;- WebSocketServer: ServerBootstrap on a single-thread boss + single-thread&#10;  worker group (decision 2 — preserves the single inbound producer). Pipeline is&#10;  HttpServerCodec -&gt; HttpObjectAggregator -&gt; WebSocketServerProtocolHandler(&quot;/ws&quot;)&#10;  -&gt; WebSocketFrameHandler. Owns a DefaultChannelGroup exposed via getChannelGroup()&#10;  for the P4-6 publisher to fan out over. start()/stop(), boundPort() for&#10;  ephemeral-port tests. ws://, no TLS.&#10;- WebSocketFrameHandler: registers the channel in the group on HandshakeComplete&#10;  (not channelActive, so a still-upgrading HTTP channel never joins the broadcast&#10;  group); DefaultChannelGroup auto-removes on close. channelRead0 is a stub for P4-5.&#10;- Uses the Netty 4.2 event-loop API (MultiThreadIoEventLoopGroup + NioIoHandler,&#10;  since NioEventLoopGroup is deprecated in 4.2).&#10;- Tests: WebSocketFrameHandlerTest (EmbeddedChannel membership contract) and&#10;  WebSocketServerTest (real loopback handshake join/leave). All green." />
+    <MESSAGE value="feat(net): route manual WebSocket orders through the FIX gateway (P4-5)&#10;&#10;Wire the WS inbound edge to the real FIX path so the gateway stays live in&#10;the running demo (decision 1). All on the single worker thread — inbound&#10;stays ProducerType.SINGLE (§5.2).&#10;&#10;- JsonToFix: promote the Phase-3 msg(...) builder to production. Emits 35=D&#10;  (11,55,54,38,44) and 35=F (11,41) FIX 4.2 bytes with correct 8=/9= body&#10;  length and 10= checksum. Framework-free (FixConstants + Side only). Prices&#10;  arrive as integer cents and are formatted to FIX decimal dollars here — the&#10;  single cents&lt;-&gt;FIX bridge.&#10;- WebSocketFrameHandler: channelRead0 handles TextWebSocketFrame — Jackson&#10;  readTree -&gt; dispatch on &quot;type&quot; -&gt; JsonToFix -&gt; OrderGateway.onFrame.&#10;  Malformed/unknown/invalid-side dropped and logged at the boundary (§5.4).&#10;  FixFrameDecoder is not used here: a WS frame is already one message, so&#10;  JsonToFix output goes straight to onFrame; the decoder stays reserved for a&#10;  future raw-FIX TCP acceptor.&#10;- WebSocketServer: constructor now takes the OrderGateway and owns one shared&#10;  ObjectMapper, passed into each per-channel handler.&#10;- Tests: JsonToFixParseTest (round-trip through the real FixParser: field&#10;  mapping, side 1/2, price formatting, wrong-symbol reject); WebSocketFrameHandlerTest&#10;  (membership + inbound NEW/SELL/CANCEL/malformed/unknown/invalid-side/wrong-symbol);&#10;  WebSocketServerTest updated for the new constructor. All green." />
+    <option name="LAST_COMMIT_MESSAGE" value="feat(net): route manual WebSocket orders through the FIX gateway (P4-5)&#10;&#10;Wire the WS inbound edge to the real FIX path so the gateway stays live in&#10;the running demo (decision 1). All on the single worker thread — inbound&#10;stays ProducerType.SINGLE (§5.2).&#10;&#10;- JsonToFix: promote the Phase-3 msg(...) builder to production. Emits 35=D&#10;  (11,55,54,38,44) and 35=F (11,41) FIX 4.2 bytes with correct 8=/9= body&#10;  length and 10= checksum. Framework-free (FixConstants + Side only). Prices&#10;  arrive as integer cents and are formatted to FIX decimal dollars here — the&#10;  single cents&lt;-&gt;FIX bridge.&#10;- WebSocketFrameHandler: channelRead0 handles TextWebSocketFrame — Jackson&#10;  readTree -&gt; dispatch on &quot;type&quot; -&gt; JsonToFix -&gt; OrderGateway.onFrame.&#10;  Malformed/unknown/invalid-side dropped and logged at the boundary (§5.4).&#10;  FixFrameDecoder is not used here: a WS frame is already one message, so&#10;  JsonToFix output goes straight to onFrame; the decoder stays reserved for a&#10;  future raw-FIX TCP acceptor.&#10;- WebSocketServer: constructor now takes the OrderGateway and owns one shared&#10;  ObjectMapper, passed into each per-channel handler.&#10;- Tests: JsonToFixParseTest (round-trip through the real FixParser: field&#10;  mapping, side 1/2, price formatting, wrong-symbol reject); WebSocketFrameHandlerTest&#10;  (membership + inbound NEW/SELL/CANCEL/malformed/unknown/invalid-side/wrong-symbol);&#10;  WebSocketServerTest updated for the new constructor. All green." />
   </component>
 </project>

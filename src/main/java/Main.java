@@ -1,62 +1,149 @@
 import engine.MatchingEngine;
-import model.Order;
-import model.Side;
-import model.Trade;
-import util.IDGenerator;
+import engine.MatchingEngineHandler;
+import event.InboundPipeline;
+import event.OutboundPipeline;
+import event.SnapshotPipeline;
+import gateway.OrderGateway;
+import market.MarketDataService;
+import net.WebSocketServer;
+import publisher.TradeLogger;
+import publisher.WebSocketPublisher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class Main {
-    public static void main(String[] args) {
+import java.util.concurrent.CountDownLatch;
+
+/**
+ * P4-7 bring-up. Assembles the full pipeline and runs the demo server.
+ *
+ * <p>Note: no package declaration — Main sits at the root of {@code src/main/java} per the
+ * SRS §7 project structure.
+ *
+ * <p>The wired path, end to end:
+ * <pre>
+ *   React client --ws--> WebSocketFrameHandler --JSON--> JsonToFix --FIX bytes-->
+ *   OrderGateway --> [inbound ring] --> MatchingEngineHandler --> MatchingEngine
+ *        |                                     |
+ *        |                                     +--> [outbound ring]  --> WebSocketPublisher (EXEC)
+ *        |                                     |                     --> TradeLogger
+ *        |                                     +--> [snapshot ring]  --> WebSocketPublisher (BOOK)
+ *        |                                                           --> MarketDataService
+ * </pre>
+ *
+ * <p><b>Single-writer discipline (§5.2).</b> Three rings, each with exactly one producer:
+ * the gateway on inbound (called only from the Netty worker, which is one thread —
+ * guide decision 2), and {@code MatchingEngineHandler} on both outbound rings (same object,
+ * same inbound-consumer thread). This class never touches the book directly: every order
+ * enters through the gateway, so the engine is mutated only on the inbound consumer thread.
+ * That is also why there is no book seeding here — seeding would mean publishing from the
+ * main thread. Let a client send the first order.
+ *
+ * <p><b>Startup order matters.</b> Outbound and snapshot consumers must be running before
+ * inbound starts, or the engine publishes into rings nobody is draining. Shutdown is the
+ * strict reverse: stop accepting input first, then drain inward-out.
+ */
+public final class Main {
+
+    private static final Logger log = LoggerFactory.getLogger(Main.class);
+
+    /** Demo default; override with the first CLI arg. */
+    private static final int DEFAULT_PORT = 8080;
+
+    private Main() {
+        // Entry point only.
+    }
+
+    public static void main(String[] args) throws Exception {
+        final int port = parsePort(args);
+
+        // --- 1. Engine ------------------------------------------------------------------
         MatchingEngine engine = new MatchingEngine();
 
-        long alice = IDGenerator.nextParticipantID();
-        long bob = IDGenerator.nextParticipantID();
-        long charlie = IDGenerator.nextParticipantID();
+        // --- 2. Outbound rings (constructed; consumers registered below, started later) ---
+        OutboundPipeline outbound = new OutboundPipeline();
+        SnapshotPipeline snapshots = new SnapshotPipeline();
 
-        // Seed the book with resting orders (no crosses)
-        Order bid1 = new Order(IDGenerator.nextOrderID(), alice, Side.BUY, 9900, 100, System.nanoTime());
-        Order bid2 = new Order(IDGenerator.nextOrderID(), bob, Side.BUY, 9800, 50, System.nanoTime());
-        Order ask1 = new Order(IDGenerator.nextOrderID(), alice, Side.SELL, 10100, 80, System.nanoTime());
-        Order ask2 = new Order(IDGenerator.nextOrderID(), charlie, Side.SELL, 10200, 60, System.nanoTime());
+        // --- 3. Engine handler: sole producer of BOTH outbound rings --------------------
+        MatchingEngineHandler engineHandler = new MatchingEngineHandler(
+                engine,
+                outbound.getRingBuffer(),
+                snapshots.getRingBuffer());
 
-        engine.addOrder(bid1);
-        engine.addOrder(bid2);
-        engine.addOrder(ask1);
-        engine.addOrder(ask2);
+        // Without this the engine reports nothing: fills are surfaced through the
+        // ExecutionListener seam, which defaults to NO_OP.
+        engine.setExecutionListener(engineHandler);
 
-        System.out.println("=== Initial Book ===");
-        engine.printBook();
+        // --- 4. Inbound ring (attaches its consumer at construction) --------------------
+        InboundPipeline inbound = new InboundPipeline(engineHandler);
+        OrderGateway gateway = new OrderGateway(inbound.getRingBuffer());
 
-        // Partial match: Charlie buys 50 at 10100, fills 50 of ask1's 80
-        Order crossingBuy = new Order(IDGenerator.nextOrderID(), charlie, Side.BUY, 10100, 50, System.nanoTime());
-        engine.addOrder(crossingBuy);
+        // --- 5. Network edge ------------------------------------------------------------
+        // Constructed before the publisher: the server owns the ChannelGroup, which exists
+        // at construction time (pre-start) and is the single source of truth for clients.
+        WebSocketServer server = new WebSocketServer(port, gateway);
+        WebSocketPublisher publisher = new WebSocketPublisher(server.getChannelGroup());
 
-        System.out.println("\n=== After Partial Fill (buy 50 @ 10100) ===");
-        engine.printBook();
+        // --- 6. Register outbound subscribers (must precede start) ----------------------
+        // Independent consumers, each with its own sequence counter (§3.4) — none blocks
+        // the others or the engine.
+        TradeLogger tradeLogger = new TradeLogger();
+        MarketDataService marketData = new MarketDataService();
 
-        // Full match: Bob sells 100 at 9900, fills all of bid1
-        Order crossingSell = new Order(IDGenerator.nextOrderID(), bob, Side.SELL, 9900, 100, System.nanoTime());
-        engine.addOrder(crossingSell);
+        outbound.handleEventsWith(publisher.executionHandler(), tradeLogger);
+        snapshots.handleEventsWith(publisher.snapshotHandler(), marketData);
 
-        System.out.println("\n=== After Full Fill (sell 100 @ 9900) ===");
-        engine.printBook();
+        // --- 7. Start: outbound first, then inbound, then accept connections ------------
+        outbound.start();
+        snapshots.start();
+        inbound.start();
+        server.start();
 
-        // Multi-level match: Alice buys 100 at 10200, sweeps remaining ask1 (30) and into ask2 (60)
-        Order sweepBuy = new Order(IDGenerator.nextOrderID(), alice, Side.BUY, 10200, 100, System.nanoTime());
-        engine.addOrder(sweepBuy);
+        log.info("OMS up. WebSocket endpoint: ws://localhost:{}/ws", server.boundPort());
+        log.info("Submit an order:  {}", "{\"type\":\"NEW\",\"clOrdId\":1,\"side\":\"BUY\","
+                + "\"price\":15000,\"qty\":10,\"symbol\":\"ASML\"}");
+        log.info("Cancel an order:  {}", "{\"type\":\"CANCEL\",\"clOrdId\":2,\"origClOrdId\":1}");
+        log.info("Ctrl+C to stop.");
 
-        System.out.println("\n=== After Multi-Level Sweep (buy 100 @ 10200) ===");
-        engine.printBook();
+        awaitShutdown(server, inbound, snapshots, outbound);
+    }
 
-        // Cancellation
-        engine.cancelOrder(bid2.getOrderID());
+    /**
+     * Parks the main thread until the JVM is asked to exit, then tears the pipeline down in
+     * the strict reverse of startup: stop accepting input, then drain each ring inward-out.
+     */
+    private static void awaitShutdown(WebSocketServer server,
+                                      InboundPipeline inbound,
+                                      SnapshotPipeline snapshots,
+                                      OutboundPipeline outbound) throws InterruptedException {
+        CountDownLatch shutdown = new CountDownLatch(1);
 
-        System.out.println("\n=== After Cancelling Bid @ 9800 ===");
-        engine.printBook();
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            log.info("Shutting down...");
+            try {
+                server.stop();        // no new frames can enter the gateway
+                inbound.shutdown();   // drain queued orders through the engine
+                snapshots.shutdown(); // then the two outbound streams the engine fed
+                outbound.shutdown();
+            } catch (Exception e) {
+                log.warn("Error during shutdown", e);
+            } finally {
+                shutdown.countDown();
+            }
+            log.info("Shutdown complete.");
+        }, "shutdown-hook"));
 
-        // model.Trade history
-        System.out.println("\n=== model.Trade History ===");
-        for (Trade trade : engine.getTrades()) {
-            System.out.println(trade);
+        shutdown.await();
+    }
+
+    private static int parsePort(String[] args) {
+        if (args.length == 0) {
+            return DEFAULT_PORT;
+        }
+        try {
+            return Integer.parseInt(args[0]);
+        } catch (NumberFormatException e) {
+            log.warn("Unparseable port '{}', using default {}", args[0], DEFAULT_PORT);
+            return DEFAULT_PORT;
         }
     }
 }

@@ -4,19 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e1aea6c6-22a5-4fbf-ab3b-b1fb46959b08" name="Changes" comment="Moved all backend code into backend folder">
-      <change afterPath="$PROJECT_DIR$/frontend/tsconfig.node.json" afterDir="false" />
+    <list default="true" id="e1aea6c6-22a5-4fbf-ab3b-b1fb46959b08" name="Changes" comment="Phase 5 (P5-0): Vite/React/TS scaffold + cents↔dollars format primitives&#10;&#10;Author the empty frontend/ scaffold so the toolchain boots and land the&#10;price-formatting primitives with tests.&#10;&#10;- package.json: Vite 8 / React 19 / Vitest 4 / TS 5, ESM, dev/build/test scripts&#10;- tsconfig.json (strict, src+test) + standalone tsconfig.node.json for the&#10;  config file; no project references / no composite (avoids the tsc -b footgun)&#10;- vite.config.ts via vitest/config, environment: node (jsdom deferred to P5-2)&#10;- index.html, main.tsx (root guard + StrictMode), App.tsx static shell&#10;- .gitignore (keeps base .env tracked), .env with VITE_WS_URL&#10;- src/format.ts: centsToDollars / dollarsToCents — string-based integer math,&#10;  no float; mirrors backend parsePrice policy (&gt;0, &lt;=2 decimals, -1 -&gt; &quot;—&quot;)&#10;- test/format.test.ts: formatting, sentinel/non-finite, round-trip, all&#10;  reject branches&#10;&#10;Pure logic verified by hand; toolchain to be booted locally (no network in&#10;the authoring env). No later-step files created; backend untouched.">
+      <change afterPath="$PROJECT_DIR$/frontend/src/protocol/encode.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/protocol/messages.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/state/reducer.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/src/state/useOrderBook.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/test/protocol.test.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/test/reducer.test.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend/vite-env.d.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/.env" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/.env" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/App.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/format.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/format.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/main.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/main.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/test/format.test.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/test/format.test.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/tsconfig.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/tsconfig.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/vite.config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/vite.config.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -253,7 +249,7 @@
       <workItem from="1787671643518" duration="4497000" />
       <workItem from="1787752673781" duration="5436000" />
       <workItem from="1787938413765" duration="673000" />
-      <workItem from="1788117299468" duration="4141000" />
+      <workItem from="1788117299468" duration="6347000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit: Order Book Demo project">
       <option name="closed" value="true" />
@@ -567,14 +563,21 @@
       <option name="project" value="LOCAL" />
       <updated>1788119789331</updated>
     </task>
-    <option name="localTasksCounter" value="40" />
+    <task id="LOCAL-00040" summary="Phase 5 (P5-0): Vite/React/TS scaffold + cents↔dollars format primitives&#10;&#10;Author the empty frontend/ scaffold so the toolchain boots and land the&#10;price-formatting primitives with tests.&#10;&#10;- package.json: Vite 8 / React 19 / Vitest 4 / TS 5, ESM, dev/build/test scripts&#10;- tsconfig.json (strict, src+test) + standalone tsconfig.node.json for the&#10;  config file; no project references / no composite (avoids the tsc -b footgun)&#10;- vite.config.ts via vitest/config, environment: node (jsdom deferred to P5-2)&#10;- index.html, main.tsx (root guard + StrictMode), App.tsx static shell&#10;- .gitignore (keeps base .env tracked), .env with VITE_WS_URL&#10;- src/format.ts: centsToDollars / dollarsToCents — string-based integer math,&#10;  no float; mirrors backend parsePrice policy (&gt;0, &lt;=2 decimals, -1 -&gt; &quot;—&quot;)&#10;- test/format.test.ts: formatting, sentinel/non-finite, round-trip, all&#10;  reject branches&#10;&#10;Pure logic verified by hand; toolchain to be booted locally (no network in&#10;the authoring env). No later-step files created; backend untouched.">
+      <option name="closed" value="true" />
+      <created>1788145253018</created>
+      <option name="number" value="00040" />
+      <option name="presentableId" value="LOCAL-00040" />
+      <option name="project" value="LOCAL" />
+      <updated>1788145253018</updated>
+    </task>
+    <option name="localTasksCounter" value="41" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Did some file restructuring to organize classes" />
     <MESSAGE value="Implemented step 0 of the order gateway: added FixConstants holding SOH = 0x01, EQUALS = '='. tag numbers: 8, 9, 10, 35, 11, 38, 41, 44, 54, 55. msg-type bytes: 'D', 'F'. the single configured instrument symbol for the book" />
     <MESSAGE value="Implemented step 1 of the order gateway:parseLong(byte[] buf, int start, int end). Goal: pure byte-range to long. Foundation for every numeric parse downstream. Walk bytes [start, end). For each: digit = b - '0', reject if outside 0..9, accumulate val = val * 10 + digit.As well as some unit tests" />
     <MESSAGE value="Add parsePrice for FIX price fields (Step 2)&#10;&#10;Parse a byte-range FIX price to long cents, reusing parseLong for the&#10;integer and fractional parts. Scale the fraction by digit length, not&#10;value: one digit *10, two digits as-is.&#10;&#10;Reject (-1L sentinel, consistent with parseLong) on: empty range, empty&#10;integer part, more than two decimals, non-digit bytes, and non-positive&#10;result. The zero/negative price policy is applied here via the &gt; 0 check,&#10;since parseLong deliberately treats &quot;0&quot; as a valid parse.&#10;&#10;PRICE_SCALE and MAX_DECIMALS kept private to the parser (no second caller).&#10;No String/split/BigDecimal; pure byte[] in, off the hot path.&#10;&#10;Tested: integer-only, one/two decimals, leading zeros, zero-integer-part&#10;with positive fraction, and rejects for &gt;2 decimals, zero, negative, bare&#10;dot, empty integer part, trailing dot, trailing junk, and multiple dots.&#10;Tests embed each price in a wider buffer to verify offset/length bounds." />
@@ -599,6 +602,7 @@
     <MESSAGE value="test(net): WebSocket round-trip integration test — closes Phase 4 (P4-8)&#10;&#10;The SRS §6.2 round-trip proven over real sockets: a real Netty WS client&#10;connects to the fully assembled server on an ephemeral port, submits orders&#10;as JSON, and asserts the EXEC/BOOK JSON pushed back.&#10;&#10;WebSocketRoundTripTest assembles the whole pipeline in @BeforeEach, replicating&#10;Main's load-bearing wiring order verbatim (engine -&gt; outbound + snapshot&#10;pipelines -&gt; MatchingEngineHandler -&gt; setExecutionListener -&gt; inbound pipeline&#10;-&gt; OrderGateway -&gt; WebSocketServer(0) -&gt; WebSocketPublisher -&gt; register roles -&gt;&#10;start). Test-local fixture rather than a Main refactor, since Main parks on a&#10;CountDownLatch behind a shutdown hook and isn't programmatically reusable.&#10;&#10;Two properties of the running system shape the test:&#10;&#10;- EXEC and BOOK are independent consumers with separate sequence counters and&#10;  interleave unpredictably. awaitFrame matches on a parsed predicate, removes&#10;  matched frames so none is matched twice, and retains non-matching frames for&#10;  later awaits (each stage asserts on both an EXEC and a BOOK). The expected&#10;  book shape is folded into the predicate so a stale [[15000,10]] never&#10;  satisfies a [[15000,6]] await. No assertion assumes &quot;frame N is the fill&quot;.&#10;- Four-plus daemon-thread hops: every assertion is a bounded await (2s ceiling,&#10;  fast path immediate); no Thread.sleep as a sync primitive. @BeforeEach gates&#10;  on ChannelGroup size == 1 before running, so the first snapshot can't publish&#10;  into an empty group and get dropped by the publisher's empty-group early-out.&#10;&#10;Coverage: resting BUY -&gt; ORDER_ACCEPTED + BOOK bid level; crossing SELL -&gt;&#10;ORDER_FILLED at the passive price with correct aggressor/passive ids + BOOK&#10;reduced; CANCEL (OrigClOrdID) -&gt; ORDER_CANCELLED (orderId = cancelled order id,&#10;verified against the handler's cancel branch) + empty book; and a negative -&#10;malformed JSON publishes nothing and the same connection still round-trips a&#10;valid order, proving the boundary drop kills neither the worker thread nor the&#10;channel.&#10;&#10;Reuses P4-4's WebSocketServerTest loopback-client idiom (lifted into a private&#10;LoopbackClient with a text-frame sink and matchers); WebSocketServerTest is&#10;untouched. Both tests green." />
     <MESSAGE value="scaffold: add empty frontend module directory structure&#10;&#10;Create folder-and-file skeleton for the React/TypeScript/Vite frontend&#10;module alongside the existing Maven backend. All files are empty stubs&#10;pending content population in subsequent steps." />
     <MESSAGE value="Moved all backend code into backend folder" />
-    <option name="LAST_COMMIT_MESSAGE" value="Moved all backend code into backend folder" />
+    <MESSAGE value="Phase 5 (P5-0): Vite/React/TS scaffold + cents↔dollars format primitives&#10;&#10;Author the empty frontend/ scaffold so the toolchain boots and land the&#10;price-formatting primitives with tests.&#10;&#10;- package.json: Vite 8 / React 19 / Vitest 4 / TS 5, ESM, dev/build/test scripts&#10;- tsconfig.json (strict, src+test) + standalone tsconfig.node.json for the&#10;  config file; no project references / no composite (avoids the tsc -b footgun)&#10;- vite.config.ts via vitest/config, environment: node (jsdom deferred to P5-2)&#10;- index.html, main.tsx (root guard + StrictMode), App.tsx static shell&#10;- .gitignore (keeps base .env tracked), .env with VITE_WS_URL&#10;- src/format.ts: centsToDollars / dollarsToCents — string-based integer math,&#10;  no float; mirrors backend parsePrice policy (&gt;0, &lt;=2 decimals, -1 -&gt; &quot;—&quot;)&#10;- test/format.test.ts: formatting, sentinel/non-finite, round-trip, all&#10;  reject branches&#10;&#10;Pure logic verified by hand; toolchain to be booted locally (no network in&#10;the authoring env). No later-step files created; backend untouched." />
+    <option name="LAST_COMMIT_MESSAGE" value="Phase 5 (P5-0): Vite/React/TS scaffold + cents↔dollars format primitives&#10;&#10;Author the empty frontend/ scaffold so the toolchain boots and land the&#10;price-formatting primitives with tests.&#10;&#10;- package.json: Vite 8 / React 19 / Vitest 4 / TS 5, ESM, dev/build/test scripts&#10;- tsconfig.json (strict, src+test) + standalone tsconfig.node.json for the&#10;  config file; no project references / no composite (avoids the tsc -b footgun)&#10;- vite.config.ts via vitest/config, environment: node (jsdom deferred to P5-2)&#10;- index.html, main.tsx (root guard + StrictMode), App.tsx static shell&#10;- .gitignore (keeps base .env tracked), .env with VITE_WS_URL&#10;- src/format.ts: centsToDollars / dollarsToCents — string-based integer math,&#10;  no float; mirrors backend parsePrice policy (&gt;0, &lt;=2 decimals, -1 -&gt; &quot;—&quot;)&#10;- test/format.test.ts: formatting, sentinel/non-finite, round-trip, all&#10;  reject branches&#10;&#10;Pure logic verified by hand; toolchain to be booted locally (no network in&#10;the authoring env). No later-step files created; backend untouched." />
   </component>
 </project>

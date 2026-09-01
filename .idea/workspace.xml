@@ -4,15 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e1aea6c6-22a5-4fbf-ab3b-b1fb46959b08" name="Changes" comment="Phase 5 (P5-0): Vite/React/TS scaffold + cents↔dollars format primitives&#10;&#10;Author the empty frontend/ scaffold so the toolchain boots and land the&#10;price-formatting primitives with tests.&#10;&#10;- package.json: Vite 8 / React 19 / Vitest 4 / TS 5, ESM, dev/build/test scripts&#10;- tsconfig.json (strict, src+test) + standalone tsconfig.node.json for the&#10;  config file; no project references / no composite (avoids the tsc -b footgun)&#10;- vite.config.ts via vitest/config, environment: node (jsdom deferred to P5-2)&#10;- index.html, main.tsx (root guard + StrictMode), App.tsx static shell&#10;- .gitignore (keeps base .env tracked), .env with VITE_WS_URL&#10;- src/format.ts: centsToDollars / dollarsToCents — string-based integer math,&#10;  no float; mirrors backend parsePrice policy (&gt;0, &lt;=2 decimals, -1 -&gt; &quot;—&quot;)&#10;- test/format.test.ts: formatting, sentinel/non-finite, round-trip, all&#10;  reject branches&#10;&#10;Pure logic verified by hand; toolchain to be booted locally (no network in&#10;the authoring env). No later-step files created; backend untouched.">
-      <change afterPath="$PROJECT_DIR$/frontend/src/protocol/encode.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/protocol/messages.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/state/reducer.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/state/useOrderBook.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/test/protocol.test.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/test/reducer.test.ts" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/vite-env.d.ts" afterDir="false" />
+    <list default="true" id="e1aea6c6-22a5-4fbf-ab3b-b1fb46959b08" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/package.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/vite.config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/vite.config.ts" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -20,7 +16,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="64" />
+    <option name="cachedIndexableFilesCount" value="88" />
     <option name="fileBasedEmbeddingIndicesEnabled" value="true" />
   </component>
   <component name="FileTemplateManagerImpl">
@@ -61,55 +57,55 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "Application.DefaultConfig.executor": "Run",
-    "Application.Main.executor": "Run",
-    "JUnit.All in OrderBookDemo.executor": "Run",
-    "JUnit.EndToEndPipelineTest.executor": "Run",
-    "JUnit.FixFrameDecoderTest.executor": "Run",
-    "JUnit.FixParserChecksumTest.executor": "Run",
-    "JUnit.FixParserPriceTest.executor": "Run",
-    "JUnit.FixParserScanTest.executor": "Run",
-    "JUnit.FixParserTest.executor": "Run",
-    "JUnit.InboundPipelineTest.executor": "Run",
-    "JUnit.MarketDataServiceTest.executor": "Run",
-    "JUnit.MatchingEngineBookReadTest.executor": "Run",
-    "JUnit.MatchingEngineHandlerSnapshotTest.executor": "Run",
-    "JUnit.MatchingEngineHandlerTest.executor": "Run",
-    "JUnit.MatchingEngineSnapshotTest.executor": "Run",
-    "JUnit.OrderGatewayTest.executor": "Run",
-    "JUnit.TradeLoggerTest.executor": "Run",
-    "JUnit.WebSocketFrameHandlerTest.executor": "Run",
-    "JUnit.WebSocketPublisherTest.executor": "Run",
-    "JUnit.WebSocketRoundTripTest.executor": "Run",
-    "JUnit.WebSocketServerTest.executor": "Run",
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.MCP Project settings loaded": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
-    "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "main",
-    "ignore.virus.scanning.warn.message": "true",
-    "kotlin-language-version-configured": "true",
-    "last_directory_selection": "C:/Users/ddavi/IdeaProjects/LimitOrderBook/src/test/java",
-    "last_opened_file_path": "C:/Users/ddavi/IdeaProjects/Limit-Order-Management-System",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "Modules",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
-    "ts.external.directory.path": "C:\\Users\\ddavi\\IdeaProjects\\Limit-Order-Management-System\\frontend\\node_modules\\typescript\\lib",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;Application.DefaultConfig.executor&quot;: &quot;Run&quot;,
+    &quot;Application.Main.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.All in OrderBookDemo.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.EndToEndPipelineTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.FixFrameDecoderTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.FixParserChecksumTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.FixParserPriceTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.FixParserScanTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.FixParserTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.InboundPipelineTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.MarketDataServiceTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.MatchingEngineBookReadTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.MatchingEngineHandlerSnapshotTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.MatchingEngineHandlerTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.MatchingEngineSnapshotTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.OrderGatewayTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.TradeLoggerTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.WebSocketFrameHandlerTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.WebSocketPublisherTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.WebSocketRoundTripTest.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.WebSocketServerTest.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.MCP Project settings loaded&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_directory_selection&quot;: &quot;C:/Users/ddavi/IdeaProjects/LimitOrderBook/src/test/java&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/ddavi/IdeaProjects/Limit-Order-Management-System&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;C:\\Users\\ddavi\\IdeaProjects\\Limit-Order-Management-System\\frontend\\node_modules\\typescript\\lib&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\ddavi\IdeaProjects\Limit-Order-Management-System\backend" />
@@ -249,7 +245,8 @@
       <workItem from="1787671643518" duration="4497000" />
       <workItem from="1787752673781" duration="5436000" />
       <workItem from="1787938413765" duration="673000" />
-      <workItem from="1788117299468" duration="6347000" />
+      <workItem from="1788117299468" duration="7210000" />
+      <workItem from="1788278215516" duration="862000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit: Order Book Demo project">
       <option name="closed" value="true" />
@@ -571,14 +568,21 @@
       <option name="project" value="LOCAL" />
       <updated>1788145253018</updated>
     </task>
-    <option name="localTasksCounter" value="41" />
+    <task id="LOCAL-00041" summary="feat(frontend): P5-1 protocol types, encoders, reducer, socket hook&#10;&#10;- protocol/messages.ts: BookFrame|ExecFrame and NewOrder|CancelOrder unions,&#10;  ExecType (full Java enum names), parseServerFrame as the single JSON-&gt;typed&#10;  narrowing point (rebuilds the object, so extra fields can't ride along)&#10;- protocol/encode.ts: NEW/CANCEL frame builders (integer cents, symbol ASML) and&#10;  a Date.now()-seeded monotonic clOrdId generator, factory-shaped for tests&#10;- state/reducer.ts: pure over {connection, book, tape, myOrders}. BOOK replaces&#10;  book state wholesale and EXEC never touches it; tape capped at 200 newest-first;&#10;  myOrders keyed by clOrdId, registered at send time (no EXEC carries a side)&#10;- state/useOrderBook.ts: socket lifecycle from VITE_WS_URL, capped backoff&#10;  reconnect (250ms-&gt;4s, reset on open), clears book on drop, StrictMode-safe&#10;- vite-env.d.ts for import.meta.env typing&#10;- tests: protocol.test.ts (narrowing + reject branches + encoders),&#10;  reducer.test.ts (BOOK-replaces-not-merges, tape cap, myOrders lifecycle,&#10;  the Q1 passive-fill gap, connection transitions)&#10;&#10;Q1/Q2 resolved against Phase-4 source: the engine fires one onFill per trade&#10;naming the aggressor and is silent on the passive side, and the handler maps&#10;aggressorOrderId straight into EXEC orderId. Resting orders therefore have no&#10;trackable per-order fill progress; encoded in the reducer as a documented gap.">
+      <option name="closed" value="true" />
+      <created>1788147462681</created>
+      <option name="number" value="00041" />
+      <option name="presentableId" value="LOCAL-00041" />
+      <option name="project" value="LOCAL" />
+      <updated>1788147462681</updated>
+    </task>
+    <option name="localTasksCounter" value="42" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="Implemented step 0 of the order gateway: added FixConstants holding SOH = 0x01, EQUALS = '='. tag numbers: 8, 9, 10, 35, 11, 38, 41, 44, 54, 55. msg-type bytes: 'D', 'F'. the single configured instrument symbol for the book" />
     <MESSAGE value="Implemented step 1 of the order gateway:parseLong(byte[] buf, int start, int end). Goal: pure byte-range to long. Foundation for every numeric parse downstream. Walk bytes [start, end). For each: digit = b - '0', reject if outside 0..9, accumulate val = val * 10 + digit.As well as some unit tests" />
     <MESSAGE value="Add parsePrice for FIX price fields (Step 2)&#10;&#10;Parse a byte-range FIX price to long cents, reusing parseLong for the&#10;integer and fractional parts. Scale the fraction by digit length, not&#10;value: one digit *10, two digits as-is.&#10;&#10;Reject (-1L sentinel, consistent with parseLong) on: empty range, empty&#10;integer part, more than two decimals, non-digit bytes, and non-positive&#10;result. The zero/negative price policy is applied here via the &gt; 0 check,&#10;since parseLong deliberately treats &quot;0&quot; as a valid parse.&#10;&#10;PRICE_SCALE and MAX_DECIMALS kept private to the parser (no second caller).&#10;No String/split/BigDecimal; pure byte[] in, off the hot path.&#10;&#10;Tested: integer-only, one/two decimals, leading zeros, zero-integer-part&#10;with positive fraction, and rejects for &gt;2 decimals, zero, negative, bare&#10;dot, empty integer part, trailing dot, trailing junk, and multiple dots.&#10;Tests embed each price in a wider buffer to verify offset/length bounds." />
     <MESSAGE value="Add zero-allocation FIX message scanner (Step 3)&#10;&#10;- Add MAX_FIELDS = 32 constant to FixConstants to bound scanner arrays&#10;- Add parallel arrays (tags, valStarts, valEnds) to FixParser for&#10;  allocation-free tokenisation; reuse across messages with no reset needed&#10;- Implement FixParser.scan(): tokenises a raw FIX byte buffer into&#10;  (tag, valueStart, valueEnd) triples; returns field count or -1 on&#10;  any structural reject (missing '=', unterminated value, non-digit tag,&#10;  field overflow)" />
@@ -603,6 +607,7 @@
     <MESSAGE value="scaffold: add empty frontend module directory structure&#10;&#10;Create folder-and-file skeleton for the React/TypeScript/Vite frontend&#10;module alongside the existing Maven backend. All files are empty stubs&#10;pending content population in subsequent steps." />
     <MESSAGE value="Moved all backend code into backend folder" />
     <MESSAGE value="Phase 5 (P5-0): Vite/React/TS scaffold + cents↔dollars format primitives&#10;&#10;Author the empty frontend/ scaffold so the toolchain boots and land the&#10;price-formatting primitives with tests.&#10;&#10;- package.json: Vite 8 / React 19 / Vitest 4 / TS 5, ESM, dev/build/test scripts&#10;- tsconfig.json (strict, src+test) + standalone tsconfig.node.json for the&#10;  config file; no project references / no composite (avoids the tsc -b footgun)&#10;- vite.config.ts via vitest/config, environment: node (jsdom deferred to P5-2)&#10;- index.html, main.tsx (root guard + StrictMode), App.tsx static shell&#10;- .gitignore (keeps base .env tracked), .env with VITE_WS_URL&#10;- src/format.ts: centsToDollars / dollarsToCents — string-based integer math,&#10;  no float; mirrors backend parsePrice policy (&gt;0, &lt;=2 decimals, -1 -&gt; &quot;—&quot;)&#10;- test/format.test.ts: formatting, sentinel/non-finite, round-trip, all&#10;  reject branches&#10;&#10;Pure logic verified by hand; toolchain to be booted locally (no network in&#10;the authoring env). No later-step files created; backend untouched." />
-    <option name="LAST_COMMIT_MESSAGE" value="Phase 5 (P5-0): Vite/React/TS scaffold + cents↔dollars format primitives&#10;&#10;Author the empty frontend/ scaffold so the toolchain boots and land the&#10;price-formatting primitives with tests.&#10;&#10;- package.json: Vite 8 / React 19 / Vitest 4 / TS 5, ESM, dev/build/test scripts&#10;- tsconfig.json (strict, src+test) + standalone tsconfig.node.json for the&#10;  config file; no project references / no composite (avoids the tsc -b footgun)&#10;- vite.config.ts via vitest/config, environment: node (jsdom deferred to P5-2)&#10;- index.html, main.tsx (root guard + StrictMode), App.tsx static shell&#10;- .gitignore (keeps base .env tracked), .env with VITE_WS_URL&#10;- src/format.ts: centsToDollars / dollarsToCents — string-based integer math,&#10;  no float; mirrors backend parsePrice policy (&gt;0, &lt;=2 decimals, -1 -&gt; &quot;—&quot;)&#10;- test/format.test.ts: formatting, sentinel/non-finite, round-trip, all&#10;  reject branches&#10;&#10;Pure logic verified by hand; toolchain to be booted locally (no network in&#10;the authoring env). No later-step files created; backend untouched." />
+    <MESSAGE value="feat(frontend): P5-1 protocol types, encoders, reducer, socket hook&#10;&#10;- protocol/messages.ts: BookFrame|ExecFrame and NewOrder|CancelOrder unions,&#10;  ExecType (full Java enum names), parseServerFrame as the single JSON-&gt;typed&#10;  narrowing point (rebuilds the object, so extra fields can't ride along)&#10;- protocol/encode.ts: NEW/CANCEL frame builders (integer cents, symbol ASML) and&#10;  a Date.now()-seeded monotonic clOrdId generator, factory-shaped for tests&#10;- state/reducer.ts: pure over {connection, book, tape, myOrders}. BOOK replaces&#10;  book state wholesale and EXEC never touches it; tape capped at 200 newest-first;&#10;  myOrders keyed by clOrdId, registered at send time (no EXEC carries a side)&#10;- state/useOrderBook.ts: socket lifecycle from VITE_WS_URL, capped backoff&#10;  reconnect (250ms-&gt;4s, reset on open), clears book on drop, StrictMode-safe&#10;- vite-env.d.ts for import.meta.env typing&#10;- tests: protocol.test.ts (narrowing + reject branches + encoders),&#10;  reducer.test.ts (BOOK-replaces-not-merges, tape cap, myOrders lifecycle,&#10;  the Q1 passive-fill gap, connection transitions)&#10;&#10;Q1/Q2 resolved against Phase-4 source: the engine fires one onFill per trade&#10;naming the aggressor and is silent on the passive side, and the handler maps&#10;aggressorOrderId straight into EXEC orderId. Resting orders therefore have no&#10;trackable per-order fill progress; encoded in the reducer as a documented gap." />
+    <option name="LAST_COMMIT_MESSAGE" value="feat(frontend): P5-1 protocol types, encoders, reducer, socket hook&#10;&#10;- protocol/messages.ts: BookFrame|ExecFrame and NewOrder|CancelOrder unions,&#10;  ExecType (full Java enum names), parseServerFrame as the single JSON-&gt;typed&#10;  narrowing point (rebuilds the object, so extra fields can't ride along)&#10;- protocol/encode.ts: NEW/CANCEL frame builders (integer cents, symbol ASML) and&#10;  a Date.now()-seeded monotonic clOrdId generator, factory-shaped for tests&#10;- state/reducer.ts: pure over {connection, book, tape, myOrders}. BOOK replaces&#10;  book state wholesale and EXEC never touches it; tape capped at 200 newest-first;&#10;  myOrders keyed by clOrdId, registered at send time (no EXEC carries a side)&#10;- state/useOrderBook.ts: socket lifecycle from VITE_WS_URL, capped backoff&#10;  reconnect (250ms-&gt;4s, reset on open), clears book on drop, StrictMode-safe&#10;- vite-env.d.ts for import.meta.env typing&#10;- tests: protocol.test.ts (narrowing + reject branches + encoders),&#10;  reducer.test.ts (BOOK-replaces-not-merges, tape cap, myOrders lifecycle,&#10;  the Q1 passive-fill gap, connection transitions)&#10;&#10;Q1/Q2 resolved against Phase-4 source: the engine fires one onFill per trade&#10;naming the aggressor and is silent on the passive side, and the handler maps&#10;aggressorOrderId straight into EXEC orderId. Resting orders therefore have no&#10;trackable per-order fill progress; encoded in the reducer as a documented gap." />
   </component>
 </project>

@@ -1,0 +1,574 @@
+/*
+ * OMS trading terminal theme (P5-5).
+ *
+ * Subject: a live limit-order-book terminal for one instrument (ASML), built as
+ * a low-latency-systems portfolio piece; the reader is an engineer. The one bold
+ * element is the depth ladder's cumulative-depth bars — everything else stays
+ * quiet. Two type roles: a sans for chrome/labels, a monospace with tabular
+ * figures for every number, so prices align in columns and never reflow. Colour
+ * is semantic only: green = bid/up, red = ask/down, amber = degraded link, a
+ * cool blue reserved for keyboard focus so focus never reads as a side.
+ */
+
+:root {
+    --bg: #0a0e17;
+    --surface: #10151f;
+    --surface-2: #161d29;
+    --line: #232c3b;
+    --line-strong: #303c50;
+
+    --text: #d4dae4;
+    --text-dim: #7c8798;
+    --text-faint: #56606f;
+
+    --bid: #2ea043;
+    --bid-bar: rgba(46, 160, 67, 0.16);
+    --ask: #e5484d;
+    --ask-bar: rgba(229, 72, 77, 0.16);
+
+    --live: #2ea043;
+    --warn: #d9a441;
+    --focus: #4c8dff;
+
+    --mono: "JetBrains Mono", "SFMono-Regular", "SF Mono", "Cascadia Code",
+    ui-monospace, Menlo, Consolas, monospace;
+    --sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+
+    --gap: 10px;
+    --radius: 2px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* All numeric values share one monospace, tabular treatment so columns lock. */
+.header__value,
+.depth-ladder,
+.trade-tape,
+.order-entry__input,
+.open-orders__table {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+}
+
+:where(button, input):focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 1px;
+}
+
+/* ---- shell ---------------------------------------------------------------- */
+
+.app {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 100vh;
+}
+
+.topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--gap);
+    padding: 12px 18px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line-strong);
+}
+
+.workspace {
+    display: grid;
+    grid-template-columns: minmax(260px, 1fr) minmax(220px, 1fr) minmax(280px, 1.2fr);
+    gap: var(--gap);
+    padding: var(--gap);
+    flex: 1;
+    min-height: 0;
+}
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 12px;
+}
+
+.panel--ladder {
+    overflow: hidden;
+}
+
+.panel__title {
+    margin: 0 0 8px;
+    font-family: var(--sans);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--text-dim);
+}
+
+.panel__title--spaced {
+    margin-top: 18px;
+}
+
+/* ---- header --------------------------------------------------------------- */
+
+.header {
+    display: flex;
+    align-items: baseline;
+    gap: 28px;
+    min-width: 0;
+}
+
+.header__symbol {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+}
+
+.header__ticker {
+    font-family: var(--mono);
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--text);
+}
+
+.header__subtitle {
+    font-size: 10px;
+    color: var(--text-faint);
+}
+
+.header__quote {
+    display: flex;
+    gap: 24px;
+    min-width: 0;
+}
+
+.header__metric {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.header__label {
+    font-size: 10px;
+    color: var(--text-dim);
+}
+
+.header__value {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.header__metric--bid .header__value {
+    color: var(--bid);
+}
+
+.header__metric--ask .header__value {
+    color: var(--ask);
+}
+
+/* ---- connection badge ----------------------------------------------------- */
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    flex-shrink: 0;
+    padding: 5px 11px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: var(--surface-2);
+    font-size: 12px;
+    color: var(--text-dim);
+}
+
+.badge__dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--text-faint);
+}
+
+.badge--live {
+    color: var(--text);
+}
+
+.badge--live .badge__dot {
+    background: var(--live);
+    box-shadow: 0 0 0 0 rgba(46, 160, 67, 0.5);
+}
+
+.badge--connecting .badge__dot,
+.badge--reconnecting .badge__dot {
+    background: var(--warn);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .badge--live .badge__dot {
+        animation: live-pulse 2.4s ease-out infinite;
+    }
+    .badge--reconnecting .badge__dot {
+        animation: reconnect-blink 1s steps(2, jump-none) infinite;
+    }
+}
+
+@keyframes live-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(46, 160, 67, 0.5);
+    }
+    70%,
+    100% {
+        box-shadow: 0 0 0 5px rgba(46, 160, 67, 0);
+    }
+}
+
+@keyframes reconnect-blink {
+    50% {
+        opacity: 0.3;
+    }
+}
+
+/* ---- depth ladder (the hero) --------------------------------------------- */
+
+.depth-ladder {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1;
+    font-size: 13px;
+}
+
+.depth-ladder__asks,
+.depth-ladder__bids {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.depth-ladder__asks {
+    justify-content: flex-end;
+}
+
+.depth-ladder__row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 22px;
+    padding: 0 8px;
+    isolation: isolate;
+}
+
+/* Depth bar: length is cumulative depth (widthPct set inline by buildLadder),
+   anchored to the size column and growing inward. Sits behind the numbers. */
+.depth-ladder__bar {
+    position: absolute;
+    top: 1px;
+    bottom: 1px;
+    right: 0;
+    z-index: -1;
+    border-radius: 1px;
+}
+
+.depth-ladder__row--ask .depth-ladder__bar {
+    background: var(--ask-bar);
+}
+
+.depth-ladder__row--bid .depth-ladder__bar {
+    background: var(--bid-bar);
+}
+
+.depth-ladder__price {
+    font-weight: 600;
+}
+
+.depth-ladder__row--ask .depth-ladder__price {
+    color: var(--ask);
+}
+
+.depth-ladder__row--bid .depth-ladder__price {
+    color: var(--bid);
+}
+
+.depth-ladder__qty {
+    color: var(--text-dim);
+}
+
+.depth-ladder__divider {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px;
+    margin: 2px 0;
+    border-top: 1px solid var(--line-strong);
+    border-bottom: 1px solid var(--line-strong);
+    background: var(--surface-2);
+}
+
+.depth-ladder__spread-label {
+    font-family: var(--sans);
+    font-size: 10px;
+    color: var(--text-dim);
+}
+
+.depth-ladder__spread-value {
+    font-family: var(--mono);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: var(--text);
+}
+
+/* ---- trade tape ----------------------------------------------------------- */
+
+.trade-tape {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+    font-size: 13px;
+}
+
+.trade-tape__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 22px;
+    padding: 0 8px;
+    border-bottom: 1px solid var(--line);
+}
+
+.trade-tape__price {
+    color: var(--text);
+}
+
+.trade-tape__qty {
+    color: var(--text-dim);
+}
+
+/* Own trades: a left marker in the focus blue — neither bid nor ask, so it
+   reads as "mine" rather than a side. */
+.trade-tape__row--mine {
+    border-left: 2px solid var(--focus);
+    padding-left: 6px;
+}
+
+.trade-tape__row--mine .trade-tape__price {
+    color: var(--focus);
+}
+
+.trade-tape__empty,
+.open-orders__empty {
+    padding: 14px 8px;
+    color: var(--text-faint);
+    font-size: 12px;
+}
+
+/* ---- order entry ---------------------------------------------------------- */
+
+.order-entry {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.order-entry__side {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+.order-entry__side-btn {
+    padding: 8px 0;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: var(--surface-2);
+    color: var(--text-dim);
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+}
+
+.order-entry__side-btn[data-testid="side-buy"].order-entry__side-btn--active {
+    border-color: var(--bid);
+    background: var(--bid-bar);
+    color: var(--bid);
+}
+
+.order-entry__side-btn[data-testid="side-sell"].order-entry__side-btn--active {
+    border-color: var(--ask);
+    background: var(--ask-bar);
+    color: var(--ask);
+}
+
+.order-entry__field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.order-entry__label {
+    font-size: 10px;
+    color: var(--text-dim);
+}
+
+.order-entry__input {
+    width: 100%;
+    padding: 7px 8px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    text-align: right;
+}
+
+.order-entry__input::placeholder {
+    color: var(--text-faint);
+}
+
+.order-entry__submit {
+    grid-column: 1 / -1;
+    padding: 9px 0;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: var(--surface-2);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.order-entry__submit:hover {
+    border-color: var(--focus);
+}
+
+.order-entry__side-btn:disabled,
+.order-entry__input:disabled,
+.order-entry__submit:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.order-entry__error {
+    grid-column: 1 / -1;
+    padding: 7px 9px;
+    border: 1px solid var(--ask);
+    border-radius: var(--radius);
+    background: var(--ask-bar);
+    color: var(--ask);
+    font-size: 12px;
+}
+
+/* ---- open orders ---------------------------------------------------------- */
+
+.open-orders {
+    overflow-x: auto;
+}
+
+.open-orders__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.open-orders__table th {
+    padding: 4px 8px;
+    text-align: right;
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 10px;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--line-strong);
+}
+
+.open-orders__col-id,
+.open-orders__col-side {
+    text-align: left;
+}
+
+.open-orders__table td {
+    padding: 5px 8px;
+    text-align: right;
+    border-bottom: 1px solid var(--line);
+}
+
+.open-orders__id,
+.open-orders__side {
+    text-align: left;
+}
+
+.open-orders__row--buy .open-orders__side {
+    color: var(--bid);
+}
+
+.open-orders__row--sell .open-orders__side {
+    color: var(--ask);
+}
+
+.open-orders__status {
+    color: var(--text-dim);
+    font-family: var(--sans);
+    font-size: 11px;
+}
+
+.open-orders__cancel {
+    padding: 3px 9px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--text-dim);
+    font-family: var(--sans);
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.open-orders__cancel:hover {
+    border-color: var(--ask);
+    color: var(--ask);
+}
+
+/* ---- responsive ----------------------------------------------------------- */
+
+@media (max-width: 900px) {
+    .workspace {
+        grid-template-columns: 1fr;
+    }
+    .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    .header {
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+}

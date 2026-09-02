@@ -11,6 +11,11 @@
  * boundary. Input is validated locally before it can be submitted, because the
  * backend gives no reject feedback for malformed orders (decision 6) — a bad
  * order would otherwise vanish silently.
+ *
+ * `disabled` (added P5-5) gates the whole form when the socket isn't open. It
+ * pairs with the connection badge: `send` already no-ops while disconnected, so
+ * this is UX, not a correctness guard — an order can never be silently accepted
+ * while down.
  */
 
 import { useState } from "react";
@@ -52,15 +57,18 @@ export function validateOrderInput(priceInput: string, qtyInput: string): Valida
 
 export interface OrderEntryProps {
     readonly onSubmit: (side: Side, priceCents: number, qty: number) => void;
+    /** When true (e.g. socket not open), the form is inert and visibly disabled. */
+    readonly disabled?: boolean;
 }
 
-export function OrderEntry({ onSubmit }: OrderEntryProps) {
+export function OrderEntry({ onSubmit, disabled = false }: OrderEntryProps) {
     const [side, setSide] = useState<Side>("BUY");
     const [priceInput, setPriceInput] = useState("");
     const [qtyInput, setQtyInput] = useState("");
     const [error, setError] = useState<string | null>(null);
 
     const submit = (): void => {
+        if (disabled) return;
         const result = validateOrderInput(priceInput, qtyInput);
         if (!result.ok) {
             setError(result.reason);
@@ -81,6 +89,7 @@ export function OrderEntry({ onSubmit }: OrderEntryProps) {
                     className={`order-entry__side-btn${side === "BUY" ? " order-entry__side-btn--active" : ""}`}
                     aria-pressed={side === "BUY"}
                     data-testid="side-buy"
+                    disabled={disabled}
                     onClick={() => setSide("BUY")}
                 >
                     BUY
@@ -90,6 +99,7 @@ export function OrderEntry({ onSubmit }: OrderEntryProps) {
                     className={`order-entry__side-btn${side === "SELL" ? " order-entry__side-btn--active" : ""}`}
                     aria-pressed={side === "SELL"}
                     data-testid="side-sell"
+                    disabled={disabled}
                     onClick={() => setSide("SELL")}
                 >
                     SELL
@@ -105,6 +115,7 @@ export function OrderEntry({ onSubmit }: OrderEntryProps) {
                     placeholder="0.00"
                     value={priceInput}
                     data-testid="price-input"
+                    disabled={disabled}
                     onChange={(e) => setPriceInput(e.target.value)}
                 />
             </label>
@@ -118,6 +129,7 @@ export function OrderEntry({ onSubmit }: OrderEntryProps) {
                     placeholder="0"
                     value={qtyInput}
                     data-testid="qty-input"
+                    disabled={disabled}
                     onChange={(e) => setQtyInput(e.target.value)}
                 />
             </label>
@@ -126,6 +138,7 @@ export function OrderEntry({ onSubmit }: OrderEntryProps) {
                 type="button"
                 className="order-entry__submit"
                 data-testid="order-submit"
+                disabled={disabled}
                 onClick={submit}
             >
                 Submit {side}

@@ -93,4 +93,16 @@ describe("<OrderEntry />", () => {
         const { container } = render(<OrderEntry onSubmit={vi.fn()} />);
         expect(container.querySelector("form")).toBeNull();
     });
+
+    it("is inert and visibly disabled when the disabled prop is set", () => {
+        const onSubmit = vi.fn();
+        render(<OrderEntry onSubmit={onSubmit} disabled />);
+
+        expect((screen.getByTestId("price-input") as HTMLInputElement).disabled).toBe(true);
+        expect((screen.getByTestId("qty-input") as HTMLInputElement).disabled).toBe(true);
+        expect((screen.getByTestId("order-submit") as HTMLButtonElement).disabled).toBe(true);
+
+        fireEvent.click(screen.getByTestId("order-submit"));
+        expect(onSubmit).not.toHaveBeenCalled();
+    });
 });

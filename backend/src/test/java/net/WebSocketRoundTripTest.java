@@ -66,6 +66,15 @@ import static org.junit.jupiter.api.Assertions.*;
  *       precondition below, which is a membership gate, not an assertion sync.</li>
  * </ul>
  *
+ * <p><b>Order ids vs. trade ids.</b> Every {@code orderId} / {@code aggressorOrderId} /
+ * {@code passiveOrderId} asserted here is a <i>client-owned</i> {@code ClOrdID} echoed back
+ * from the JSON this test sends, so those are deterministic. {@code tradeId}, by contrast, is
+ * minted by the static {@code IdGenerator} {@code AtomicLong}, which is <b>global to the
+ * JVM</b> — Surefire runs the whole suite in one JVM, so earlier test classes have already
+ * advanced that counter and the first trade here is not id 1. Assert the trade id's
+ * <i>properties</i> (present, positive, not the {@code -1} NA sentinel), never an absolute
+ * value.
+ *
  * <p>The client scaffold reuses P4-4's {@code WebSocketServerTest} idiom verbatim
  * (HttpClientCodec → aggregator → {@code WebSocketClientProtocolHandler} with a
  * {@code HANDSHAKE_COMPLETE} latch), extended with a text-frame sink and matchers.
@@ -75,6 +84,7 @@ class WebSocketRoundTripTest {
     private static final String ASML = "ASML";
     private static final long PX = 15000L;                 // $150.00 in cents
     private static final long[][] NONE = new long[0][];    // empty side
+    private static final long NA = -1L;                    // absent-field sentinel
 
     private MatchingEngine engine;
     private OutboundPipeline outbound;
@@ -148,18 +158,25 @@ class WebSocketRoundTripTest {
         assertNotNull(accepted, "resting BUY should push an ORDER_ACCEPTED EXEC");
         assertEquals(10, accepted.path("remainingQuantity").asLong());
         assertEquals(PX, accepted.path("price").asLong());
-        assertEquals(-1, accepted.path("tradeId").asLong(), "ACCEPTED carries the -1 NA sentinel");
+        assertEquals(NA, accepted.path("tradeId").asLong(), "ACCEPTED carries the -1 NA sentinel");
 
         JsonNode restBook = client.awaitFrame(book(PX, level(PX, 10), NONE), 2000);
         assertNotNull(restBook, "resting BUY should push a BOOK with bids [[15000,10]]");
-        assertEquals(-1, restBook.path("bestAsk").asLong(), "no ask side yet");
+        assertEquals(NA, restBook.path("bestAsk").asLong(), "no ask side yet");
 
         // 2) Crossing SELL 4 @ 150.00 -> ORDER_FILLED at the passive price + BOOK reduced to 6.
         client.send(newOrder(2, "SELL", PX, 4));
 
         JsonNode filled = client.awaitFrame(exec("ORDER_FILLED", 2), 2000);
         assertNotNull(filled, "crossing SELL should push an ORDER_FILLED EXEC");
-        assertEquals(1, filled.path("tradeId").asLong(), "first trade -> tradeId 1");
+
+        // tradeId is IdGenerator-minted and therefore JVM-global (see class javadoc): assert
+        // that a real trade id is present, not an absolute value. A full-suite run advances the
+        // counter well past 1 before this class executes.
+        long tradeId = filled.path("tradeId").asLong();
+        assertTrue(tradeId > 0,
+                "a fill must carry a real trade id (positive, not the -1 NA sentinel) but was: " + tradeId);
+
         assertEquals(PX, filled.path("price").asLong(), "fill at the passive resting price");
         assertEquals(4, filled.path("filledQuantity").asLong());
         assertEquals(0, filled.path("remainingQuantity").asLong());
@@ -180,7 +197,7 @@ class WebSocketRoundTripTest {
 
         JsonNode emptyBook = client.awaitFrame(book(-1, NONE, NONE), 2000);
         assertNotNull(emptyBook, "cancelling the only order should empty the book");
-        assertEquals(-1, emptyBook.path("bestAsk").asLong());
+        assertEquals(NA, emptyBook.path("bestAsk").asLong());
     }
 
     /**

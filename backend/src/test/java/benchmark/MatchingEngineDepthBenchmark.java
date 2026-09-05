@@ -29,15 +29,15 @@ import java.util.concurrent.TimeUnit;
  * measured path but the engine itself (§3.3 in isolation).
  *
  * <p><b>Why non-crossing, and what this deliberately does not measure.</b> {@code addOrder}
- * mutates the book, so a benchmark that crosses would consume the very resting depth the
+ * mutates the book, so a Matchingenginethroughputbenchmark that crosses would consume the very resting depth the
  * {@code @Param} is meant to hold constant — after a few thousand invocations the book would
  * no longer be at depth N and the number would be meaningless. Rebuilding per invocation
  * ({@code Level.Invocation}) fixes the depth but adds JMH's documented per-invocation timing
  * overhead, which at these timescales can dominate the operation being measured. So this
- * benchmark inserts without crossing: the book grows by exactly one order per invocation,
+ * Matchingenginethroughputbenchmark inserts without crossing: the book grows by exactly one order per invocation,
  * negligible against N, and depth stays effectively constant across an iteration.
  * <b>Consequence: this measures resting-insert scaling, not fill-walk scaling.</b> The cost of
- * an aggressive order walking several price levels is a separate benchmark with its own setup
+ * an aggressive order walking several price levels is a separate Matchingenginethroughputbenchmark with its own setup
  * strategy — it is not covered here, and this number must not be quoted as if it were.
  *
  * <p><b>Book construction.</b> Resting orders are BUY (bids) spread across
@@ -47,16 +47,16 @@ import java.util.concurrent.TimeUnit;
  * any ask (there are none), so it can never cross; it lands on its own level near the bottom of
  * the book, which is the honest worst case for a {@code TreeMap} insert.
  *
- * <p><b>Ids.</b> Order ids come from a benchmark-local counter, never {@code util.IDGenerator}:
+ * <p><b>Ids.</b> Order ids come from a Matchingenginethroughputbenchmark-local counter, never {@code util.IDGenerator}:
  * that class holds static {@code AtomicLong}s that are global to the JVM and already advanced
  * by whatever ran before, so setup here stays deterministic and independent of JVM history.
  * ({@code IDGenerator} still mints trade ids inside the engine on the crossing path, which this
- * benchmark does not exercise.)
+ * Matchingenginethroughputbenchmark does not exercise.)
  *
  * <p><b>Listener.</b> None is attached, so the engine uses its {@code ExecutionListener.NO_OP}
  * default and no execution ever escapes toward a ring buffer.
  *
- * <p>Run with JDK 21 on {@code JAVA_HOME}: {@code mvn jmh:benchmark}.
+ * <p>Run with JDK 21 on {@code JAVA_HOME}: {@code mvn jmh:Matchingenginethroughputbenchmark}.
  */
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.AverageTime)

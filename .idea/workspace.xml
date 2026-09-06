@@ -5,6 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e1aea6c6-22a5-4fbf-ab3b-b1fb46959b08" name="Changes" comment="P6-4: end-to-end latency benchmark (SRS §6.3 #2)&#10;&#10;Measure gateway-receipt -&gt; execution-publication latency (p50/p99/p99.9)&#10;across the real cross-thread pipeline: OrderGateway -&gt; inbound ring -&gt;&#10;MatchingEngineHandler -&gt; outbound ring, Netty stripped (WebSocket I/O is&#10;the separate §6.2 item, covered by WebSocketRoundTripTest).&#10;&#10;Standalone closed-loop runner, not a JMH @Benchmark: the op completes on a&#10;different thread from the one that starts it, so a naive @Benchmark over&#10;onFrame would time only the enqueue. Ingress = nanoTime at onFrame; egress =&#10;ExecutionEvent.timestamp (the handler's publish stamp). Both stamps already&#10;exist on their carriers (OrderEvent since Step 7, ExecutionEvent since 7.5),&#10;so the two are correlated by orderId with a single Semaphore handoff -- no&#10;carrier field added, no production change. 1,000,000 orders, 200k warmup&#10;discarded, exact percentiles by sorting a pre-allocated long[].&#10;&#10;Gated by -De2e.latency=true (excluded from mvn test and mvn jmh:benchmark).&#10;Run: mvn -q test -Dtest=EndToEndLatencyBenchmark -De2e.latency=true&#10;&#10;Result: p50 4.8us, p99 9.5us, p99.9 18.3us (single-fork, unpinned laptop).&#10;Finding: dominated by the BlockingWaitStrategy consumer wakeup, not matching&#10;(engine work is ~100-250ns per P6-1/P6-3) -- the latency lever is the wait&#10;strategy, the demo default flagged for revisit. Reported as closed-loop&#10;service-time under no queueing, NOT saturation latency.&#10;&#10;One new file under src/test/java/benchmark/. src/main/java untouched.">
+      <change afterPath="$PROJECT_DIR$/backend/src/test/java/benchmark/MatchingEngineSnapshotBenchmark.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -13,7 +14,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="EmbeddingIndexingInfo">
-    <option name="cachedIndexableFilesCount" value="284" />
+    <option name="cachedIndexableFilesCount" value="303" />
     <option name="fileBasedEmbeddingIndicesEnabled" value="true" />
   </component>
   <component name="FileTemplateManagerImpl">
@@ -264,15 +265,8 @@
       <workItem from="1788496987286" duration="1295000" />
       <workItem from="1788559283775" duration="1167000" />
       <workItem from="1788565207343" duration="3835000" />
-      <workItem from="1788632738394" duration="2794000" />
-    </task>
-    <task id="LOCAL-00002" summary="Working on version control bugs">
-      <option name="closed" value="true" />
-      <created>1780288875275</created>
-      <option name="number" value="00002" />
-      <option name="presentableId" value="LOCAL-00002" />
-      <option name="project" value="LOCAL" />
-      <updated>1780288875275</updated>
+      <workItem from="1788632738394" duration="3195000" />
+      <workItem from="1788731405360" duration="1508000" />
     </task>
     <task id="LOCAL-00003" summary="Added trade record and fill method to Order class. Currently implementing the matching engine logic.">
       <option name="closed" value="true" />
@@ -658,7 +652,15 @@
       <option name="project" value="LOCAL" />
       <updated>1788637720641</updated>
     </task>
-    <option name="localTasksCounter" value="51" />
+    <task id="LOCAL-00051" summary="P6-4: end-to-end latency benchmark (SRS §6.3 #2)&#10;&#10;Measure gateway-receipt -&gt; execution-publication latency (p50/p99/p99.9)&#10;across the real cross-thread pipeline: OrderGateway -&gt; inbound ring -&gt;&#10;MatchingEngineHandler -&gt; outbound ring, Netty stripped (WebSocket I/O is&#10;the separate §6.2 item, covered by WebSocketRoundTripTest).&#10;&#10;Standalone closed-loop runner, not a JMH @Benchmark: the op completes on a&#10;different thread from the one that starts it, so a naive @Benchmark over&#10;onFrame would time only the enqueue. Ingress = nanoTime at onFrame; egress =&#10;ExecutionEvent.timestamp (the handler's publish stamp). Both stamps already&#10;exist on their carriers (OrderEvent since Step 7, ExecutionEvent since 7.5),&#10;so the two are correlated by orderId with a single Semaphore handoff -- no&#10;carrier field added, no production change. 1,000,000 orders, 200k warmup&#10;discarded, exact percentiles by sorting a pre-allocated long[].&#10;&#10;Gated by -De2e.latency=true (excluded from mvn test and mvn jmh:benchmark).&#10;Run: mvn -q test -Dtest=EndToEndLatencyBenchmark -De2e.latency=true&#10;&#10;Result: p50 4.8us, p99 9.5us, p99.9 18.3us (single-fork, unpinned laptop).&#10;Finding: dominated by the BlockingWaitStrategy consumer wakeup, not matching&#10;(engine work is ~100-250ns per P6-1/P6-3) -- the latency lever is the wait&#10;strategy, the demo default flagged for revisit. Reported as closed-loop&#10;service-time under no queueing, NOT saturation latency.&#10;&#10;One new file under src/test/java/benchmark/. src/main/java untouched.">
+      <option name="closed" value="true" />
+      <created>1788642134109</created>
+      <option name="number" value="00051" />
+      <option name="presentableId" value="LOCAL-00051" />
+      <option name="project" value="LOCAL" />
+      <updated>1788642134109</updated>
+    </task>
+    <option name="localTasksCounter" value="52" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
